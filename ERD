@@ -1,0 +1,91 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              USERS (사용자)                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PK  id              UUID                                                    │
+│     email           VARCHAR(255)    UNIQUE NOT NULL                         │
+│     password_hash   VARCHAR(255)    NOT NULL                                │
+│     name            VARCHAR(100)    NOT NULL                                │
+│     role            ENUM('user','admin')  DEFAULT 'user'                    │
+│     is_active       BOOLEAN         DEFAULT true                            │
+│     created_at      TIMESTAMP       DEFAULT NOW()                           │
+│     updated_at      TIMESTAMP                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       │ 1:N
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            ACCOUNTS (계좌)                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PK  id              UUID                                                    │
+│ FK  user_id         UUID            → USERS.id                              │
+│     name            VARCHAR(100)    NOT NULL                                │
+│     type            ENUM('bank','credit_card','prepaid')                    │
+│     balance         DECIMAL(15,2)   DEFAULT 0                               │
+│     is_primary      BOOLEAN         DEFAULT false                           │
+│     created_at      TIMESTAMP       DEFAULT NOW()                           │
+│     updated_at      TIMESTAMP                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                      ┌────────────────┴────────────────┐
+                      │ 1:N                             │ 1:N
+                      ▼                                 ▼
+┌─────────────────────────────────┐    ┌─────────────────────────────────────┐
+│      TRANSFERS (계좌 이체)      │    │          EXPENSES (지출)            │
+├─────────────────────────────────┤    ├─────────────────────────────────────┤
+│ PK  id              UUID        │    │ PK  id              UUID            │
+│ FK  from_account_id UUID        │    │ FK  user_id         UUID → USERS    │
+│ FK  to_account_id   UUID        │    │ FK  account_id      UUID → ACCOUNTS │
+│     amount          DECIMAL     │    │ FK  category_id     UUID            │
+│     memo            TEXT        │    │ FK  subcategory_id  UUID            │
+│     transferred_at  TIMESTAMP   │    │ FK  product_id      UUID (nullable) │
+│     created_at      TIMESTAMP   │    │     amount          DECIMAL(15,2)   │
+└─────────────────────────────────┘    │     memo            TEXT            │
+                                       │     expense_at      TIMESTAMP       │
+                                       │     created_at      TIMESTAMP       │
+                                       │     updated_at      TIMESTAMP       │
+                                       └─────────────────────────────────────┘
+                                                          │
+                                                          │ N:1
+                                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CATEGORIES (대 카테고리)                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PK  id              UUID                                                    │
+│     name            VARCHAR(100)    NOT NULL (음식, 통신, 옷, 관리비...)    │
+│     icon            VARCHAR(50)                                             │
+│     created_at      TIMESTAMP                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       │ 1:N
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       SUBCATEGORIES (소 카테고리)                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PK  id              UUID                                                    │
+│ FK  category_id     UUID            → CATEGORIES.id                         │
+│     name            VARCHAR(100)    NOT NULL (커피, 간식, 구독료...)        │
+│     created_at      TIMESTAMP                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       │ 1:N
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           PRODUCTS (제품)                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PK  id              UUID                                                    │
+│ FK  subcategory_id  UUID            → SUBCATEGORIES.id                      │
+│ FK  user_id         UUID            → USERS.id (사용자별 커스텀 제품)       │
+│     name            VARCHAR(200)    NOT NULL (스타벅스 아메리카노...)       │
+│     default_price   DECIMAL(15,2)   (자주 사용하는 가격 저장)               │
+│     created_at      TIMESTAMP                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       REFRESH_TOKENS (리프레시 토큰)                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PK  id              UUID                                                    │
+│ FK  user_id         UUID            → USERS.id                              │
+│     token           VARCHAR(500)    NOT NULL                                │
+│     expires_at      TIMESTAMP       NOT NULL                                │
+│     created_at      TIMESTAMP                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
