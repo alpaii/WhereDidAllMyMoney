@@ -24,7 +24,7 @@ import type { Account, AccountType } from '@/types';
 const accountSchema = z.object({
   name: z.string().min(1, '계좌명을 입력하세요'),
   account_type: z.enum(['bank', 'credit_card', 'prepaid']),
-  balance: z.string().transform((val) => parseFloat(val) || 0),
+  balance: z.string(),
   description: z.string().optional(),
 });
 
@@ -88,18 +88,19 @@ export default function AccountsPage() {
   const onSubmit = async (data: AccountForm) => {
     try {
       setIsSubmitting(true);
+      const balance = parseFloat(data.balance) || 0;
       if (editingAccount) {
         await updateAccount(editingAccount.id, {
           name: data.name,
           account_type: data.account_type,
-          balance: data.balance,
+          balance,
           description: data.description,
         });
       } else {
         await createAccount({
           name: data.name,
           account_type: data.account_type,
-          balance: data.balance,
+          balance,
           description: data.description,
         });
       }

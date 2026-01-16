@@ -24,7 +24,7 @@ import type { Transfer, TransferCreate, PaginatedResponse } from '@/types';
 const transferSchema = z.object({
   from_account_id: z.string().min(1, '출금 계좌를 선택하세요'),
   to_account_id: z.string().min(1, '입금 계좌를 선택하세요'),
-  amount: z.string().transform((val) => parseFloat(val) || 0),
+  amount: z.string(),
   memo: z.string().optional(),
   transfer_at: z.string().optional(),
 }).refine((data) => data.from_account_id !== data.to_account_id, {
@@ -96,7 +96,7 @@ export default function TransfersPage() {
       const transferData: TransferCreate = {
         from_account_id: data.from_account_id,
         to_account_id: data.to_account_id,
-        amount: data.amount,
+        amount: parseFloat(data.amount) || 0,
         memo: data.memo || undefined,
         transfer_at: data.transfer_at || undefined,
       };
