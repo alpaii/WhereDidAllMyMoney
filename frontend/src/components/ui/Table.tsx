@@ -5,6 +5,11 @@ interface TableProps {
   className?: string;
 }
 
+interface TableCellProps extends TableProps {
+  colSpan?: number;
+  rowSpan?: number;
+}
+
 export function Table({ children, className }: TableProps) {
   return (
     <div className="overflow-x-auto">
@@ -25,9 +30,11 @@ export function TableRow({ children, className }: TableProps) {
   return <tr className={cn('hover:bg-gray-50', className)}>{children}</tr>;
 }
 
-export function TableHead({ children, className }: TableProps) {
+export function TableHead({ children, className, colSpan, rowSpan }: TableCellProps) {
   return (
     <th
+      colSpan={colSpan}
+      rowSpan={rowSpan}
       className={cn(
         'px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider',
         className
@@ -38,6 +45,14 @@ export function TableHead({ children, className }: TableProps) {
   );
 }
 
-export function TableCell({ children, className }: TableProps) {
-  return <td className={cn('px-4 py-3 text-sm text-gray-700', className)}>{children}</td>;
+export function TableCell({ children, className, colSpan, rowSpan }: TableCellProps) {
+  return (
+    <td
+      colSpan={colSpan}
+      rowSpan={rowSpan}
+      className={cn('px-4 py-3 text-sm text-gray-700', className)}
+    >
+      {children}
+    </td>
+  );
 }
