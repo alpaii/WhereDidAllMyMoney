@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import hashlib
+import base64
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from .config import settings
@@ -7,12 +9,19 @@ from .config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def _prehash_password(password: str) -> str:
+    """Pre-hash password with SHA-256 to handle bcrypt's 72-byte limit."""
+    return base64.b64encode(
+        hashlib.sha256(password.encode('utf-8')).digest()
+    ).decode('utf-8')
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(_prehash_password(plain_password), hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return pwd_context.hash(_prehash_password(password))
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
