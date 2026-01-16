@@ -23,14 +23,9 @@ export const useAuthStore = create<AuthState>()(
       login: async (data: LoginRequest) => {
         set({ isLoading: true });
         try {
-          const formData = new URLSearchParams();
-          formData.append('username', data.email);
-          formData.append('password', data.password);
-
-          const response = await api.post<TokenResponse>('/auth/login', formData, {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
+          const response = await api.post<TokenResponse>('/auth/login', {
+            email: data.email,
+            password: data.password,
           });
 
           localStorage.setItem('access_token', response.data.access_token);

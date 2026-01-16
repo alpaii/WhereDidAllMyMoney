@@ -14,6 +14,7 @@ from app.core.security import (
     decode_token
 )
 from app.core.config import settings
+from app.core.deps import get_current_user
 
 router = APIRouter()
 
@@ -143,3 +144,9 @@ async def logout(token_data: TokenRefresh, db: AsyncSession = Depends(get_db)):
         await db.commit()
 
     return {"message": "Successfully logged out"}
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: User = Depends(get_current_user)):
+    """현재 로그인한 사용자 정보 조회"""
+    return current_user
