@@ -9,8 +9,9 @@ from app.models.account import AccountType
 # Base
 class AccountBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
-    type: AccountType
+    account_type: AccountType
     is_primary: bool = False
+    description: Optional[str] = Field(None, max_length=500)
 
 
 # Create
@@ -21,14 +22,21 @@ class AccountCreate(AccountBase):
 # Update
 class AccountUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
+    account_type: Optional[AccountType] = None
     is_primary: Optional[bool] = None
+    balance: Optional[Decimal] = None
+    description: Optional[str] = Field(None, max_length=500)
 
 
 # Response
-class AccountResponse(AccountBase):
+class AccountResponse(BaseModel):
     id: UUID
     user_id: UUID
+    name: str
+    account_type: AccountType
     balance: Decimal
+    is_primary: bool
+    description: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime]
 

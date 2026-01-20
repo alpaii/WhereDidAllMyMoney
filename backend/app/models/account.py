@@ -20,9 +20,10 @@ class Account(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(100), nullable=False)
-    type = Column(SQLEnum(AccountType), nullable=False)
+    account_type = Column(SQLEnum(AccountType), nullable=False)
     balance = Column(Numeric(15, 2), default=Decimal("0.00"))
     is_primary = Column(Boolean, default=False)
+    description = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

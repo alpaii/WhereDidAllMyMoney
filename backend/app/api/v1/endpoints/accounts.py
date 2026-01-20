@@ -71,9 +71,10 @@ async def create_account(
     account = Account(
         user_id=current_user.id,
         name=account_data.name,
-        type=account_data.type,
+        account_type=account_data.account_type,
         balance=account_data.balance,
-        is_primary=account_data.is_primary
+        is_primary=account_data.is_primary,
+        description=account_data.description
     )
     db.add(account)
     await db.commit()
