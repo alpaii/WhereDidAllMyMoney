@@ -37,12 +37,15 @@ export function useExpenses(options: UseExpensesOptions = {}) {
         `/expenses/?${params.toString()}`
       );
 
-      setExpenses(response.data.items);
-      setTotal(response.data.total);
-      setPages(response.data.pages);
+      setExpenses(Array.isArray(response.data?.items) ? response.data.items : []);
+      setTotal(response.data?.total || 0);
+      setPages(response.data?.pages || 0);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '지출 목록을 불러오는데 실패했습니다');
+      setExpenses([]);
+      setTotal(0);
+      setPages(0);
     } finally {
       setIsLoading(false);
     }

@@ -112,8 +112,9 @@ async def refresh_token(token_data: TokenRefresh, db: AsyncSession = Depends(get
             detail="User not found or inactive"
         )
 
-    # Delete old refresh token
+    # Delete old refresh token and commit first
     await db.delete(token_record)
+    await db.commit()
 
     # Create new tokens
     new_access_token = create_access_token(data={"sub": str(user.id)})

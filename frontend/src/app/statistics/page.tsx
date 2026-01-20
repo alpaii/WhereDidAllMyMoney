@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   BarChart,
@@ -13,7 +13,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from 'recharts';
 import { DashboardLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
@@ -39,12 +38,17 @@ export default function StatisticsPage() {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
+  const lastFetchRef = useRef<string>('');
 
   useEffect(() => {
+    const key = `${year}-${month}`;
+    if (lastFetchRef.current === key) return;
+    lastFetchRef.current = key;
+
     fetchMonthlySummary(year, month);
     fetchCategorySummary(year, month);
     fetchDailyExpenses(year, month);
-  }, [year, month, fetchMonthlySummary, fetchCategorySummary, fetchDailyExpenses]);
+  }, [year, month]);
 
   const prevMonth = () => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1));

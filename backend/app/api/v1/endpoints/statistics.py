@@ -4,6 +4,9 @@ from sqlalchemy import select, func, extract
 from typing import Optional
 from datetime import datetime, date
 from decimal import Decimal
+from calendar import monthrange
+from pydantic import BaseModel
+from uuid import UUID
 
 from app.db.database import get_db
 from app.models.user import User
@@ -15,6 +18,30 @@ from app.schemas.expense import (
 from app.core.deps import get_current_user
 
 router = APIRouter()
+
+
+# Response models for new endpoints
+class MonthlySummaryResponse(BaseModel):
+    year: int
+    month: int
+    total_expense: Decimal
+    expense_count: int
+    daily_average: Decimal
+
+
+class CategorySummaryResponse(BaseModel):
+    category_id: str
+    category_name: str
+    category_icon: Optional[str] = None
+    total_amount: Decimal
+    expense_count: int
+    percentage: Decimal
+
+
+class DailyExpenseResponse(BaseModel):
+    date: str
+    total_amount: Decimal
+    expense_count: int
 
 
 @router.get("/summary", response_model=ExpenseSummary)
@@ -182,6 +209,142 @@ async def get_expenses_by_period(
             period=row.period,
             total_amount=Decimal(str(row.total)),
             count=row.count
+        )
+        for row in result.all()
+    ]
+
+
+@router.get("/monthly/{year}/{month}", response_model=MonthlySummaryResponse)
+async def get_monthly_summary(
+    year: int,
+    month: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """월별 지출 요약"""
+    # Get the first and last day of the month
+    _, last_day = monthrange(year, month)
+    start_date = datetime(year, month, 1)
+    end_date = datetime(year, month, last_day, 23, 59, 59)
+
+    conditions = [
+        Expense.user_id == current_user.id,
+        Expense.expense_at >= start_date,
+        Expense.expense_at <= end_date
+    ]
+
+    query = select(
+        func.coalesce(func.sum(Expense.amount), 0).label("total"),
+        func.count(Expense.id).label("count")
+    ).where(*conditions)
+
+    result = await db.execute(query)
+    row = result.one()
+
+    total_expense = Decimal(str(row.total))
+    expense_count = row.count
+    daily_average = total_expense / last_day if total_expense > 0 else Decimal("0")
+
+    return MonthlySummaryResponse(
+        year=year,
+        month=month,
+        total_expense=total_expense,
+        expense_count=expense_count,
+        daily_average=daily_average.quantize(Decimal("0.01"))
+    )
+
+
+@router.get("/category/{year}/{month}", response_model=list[CategorySummaryResponse])
+async def get_category_summary(
+    year: int,
+    month: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """월별 카테고리별 지출 통계"""
+    _, last_day = monthrange(year, month)
+    start_date = datetime(year, month, 1)
+    end_date = datetime(year, month, last_day, 23, 59, 59)
+
+    conditions = [
+        Expense.user_id == current_user.id,
+        Expense.expense_at >= start_date,
+        Expense.expense_at <= end_date
+    ]
+
+    # Get total for percentage calculation
+    total_query = select(
+        func.coalesce(func.sum(Expense.amount), 0).label("total")
+    ).where(*conditions)
+    total_result = await db.execute(total_query)
+    total_amount = Decimal(str(total_result.scalar_one()))
+
+    # Get by category
+    query = (
+        select(
+            Category.id,
+            Category.name,
+            Category.icon,
+            func.coalesce(func.sum(Expense.amount), 0).label("total"),
+            func.count(Expense.id).label("count")
+        )
+        .join(Expense, Expense.category_id == Category.id)
+        .where(*conditions)
+        .group_by(Category.id, Category.name, Category.icon)
+        .order_by(func.sum(Expense.amount).desc())
+    )
+
+    result = await db.execute(query)
+
+    return [
+        CategorySummaryResponse(
+            category_id=str(row.id),
+            category_name=row.name,
+            category_icon=row.icon,
+            total_amount=Decimal(str(row.total)),
+            expense_count=row.count,
+            percentage=(Decimal(str(row.total)) / total_amount * 100).quantize(Decimal("0.01")) if total_amount > 0 else Decimal("0")
+        )
+        for row in result.all()
+    ]
+
+
+@router.get("/daily/{year}/{month}", response_model=list[DailyExpenseResponse])
+async def get_daily_expenses(
+    year: int,
+    month: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """월별 일별 지출 통계"""
+    _, last_day = monthrange(year, month)
+    start_date = datetime(year, month, 1)
+    end_date = datetime(year, month, last_day, 23, 59, 59)
+
+    conditions = [
+        Expense.user_id == current_user.id,
+        Expense.expense_at >= start_date,
+        Expense.expense_at <= end_date
+    ]
+
+    query = (
+        select(
+            func.to_char(Expense.expense_at, 'YYYY-MM-DD').label("date"),
+            func.coalesce(func.sum(Expense.amount), 0).label("total"),
+            func.count(Expense.id).label("count")
+        )
+        .where(*conditions)
+        .group_by(func.to_char(Expense.expense_at, 'YYYY-MM-DD'))
+        .order_by(func.to_char(Expense.expense_at, 'YYYY-MM-DD'))
+    )
+
+    result = await db.execute(query)
+
+    return [
+        DailyExpenseResponse(
+            date=row.date,
+            total_amount=Decimal(str(row.total)),
+            expense_count=row.count
         )
         for row in result.all()
     ]

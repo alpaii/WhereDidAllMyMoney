@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '@/lib/api';
 import type { User, LoginRequest, RegisterRequest, TokenResponse } from '@/types';
 
@@ -7,11 +7,15 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  _hasHydrated: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   fetchUser: () => Promise<void>;
+  setHasHydrated: (state: boolean) => void;
 }
+
+const isBrowser = typeof window !== 'undefined';
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -19,6 +23,11 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      _hasHydrated: false,
+
+      setHasHydrated: (state: boolean) => {
+        set({ _hasHydrated: state });
+      },
 
       login: async (data: LoginRequest) => {
         set({ isLoading: true });
@@ -28,8 +37,10 @@ export const useAuthStore = create<AuthState>()(
             password: data.password,
           });
 
-          localStorage.setItem('access_token', response.data.access_token);
-          localStorage.setItem('refresh_token', response.data.refresh_token);
+          if (isBrowser) {
+            localStorage.setItem('access_token', response.data.access_token);
+            localStorage.setItem('refresh_token', response.data.refresh_token);
+          }
 
           const userResponse = await api.get<User>('/auth/me');
           set({ user: userResponse.data, isAuthenticated: true });
@@ -48,12 +59,17 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        if (isBrowser) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+        }
         set({ user: null, isAuthenticated: false });
       },
 
       fetchUser: async () => {
+        if (!isBrowser) {
+          return;
+        }
         const token = localStorage.getItem('access_token');
         if (!token) {
           set({ user: null, isAuthenticated: false });
@@ -75,7 +91,21 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => {
+        if (isBrowser) {
+          return localStorage;
+        }
+        // Return a no-op storage for SSR
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
       partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

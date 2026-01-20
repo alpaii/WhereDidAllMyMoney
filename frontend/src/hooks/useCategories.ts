@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import type { Category, Subcategory, Product, ProductCreate } from '@/types';
 
@@ -6,24 +6,28 @@ export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasFetched = useRef(false);
 
   const fetchCategories = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const response = await api.get<Category[]>('/categories/');
-      setCategories(response.data);
+      setCategories(Array.isArray(response.data) ? response.data : []);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '카테고리 목록을 불러오는데 실패했습니다');
+      setCategories([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
     fetchCategories();
-  }, [fetchCategories]);
+  }, []);
 
   return {
     categories,
@@ -50,10 +54,11 @@ export function useSubcategories(categoryId: string | null) {
       const response = await api.get<Subcategory[]>(
         `/categories/${categoryId}/subcategories`
       );
-      setSubcategories(response.data);
+      setSubcategories(Array.isArray(response.data) ? response.data : []);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '서브카테고리 목록을 불러오는데 실패했습니다');
+      setSubcategories([]);
     } finally {
       setIsLoading(false);
     }
@@ -75,16 +80,18 @@ export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasFetched = useRef(false);
 
   const fetchProducts = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const response = await api.get<Product[]>('/categories/products/');
-      setProducts(response.data);
+      setProducts(Array.isArray(response.data) ? response.data : []);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '상품 목록을 불러오는데 실패했습니다');
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -110,8 +117,10 @@ export function useProducts() {
   };
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
     fetchProducts();
-  }, [fetchProducts]);
+  }, []);
 
   return {
     products,

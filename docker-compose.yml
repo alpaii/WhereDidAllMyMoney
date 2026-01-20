@@ -27,6 +27,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/money_tracker
       - SECRET_KEY=your-super-secret-key-change-in-production
       - DEBUG=true
+      - TZ=Asia/Seoul
     ports:
       - "8000:8000"
     depends_on:

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import {
   Wallet,
@@ -24,14 +24,18 @@ export default function DashboardPage() {
   const { fetchMonthlySummary, fetchCategorySummary, monthlySummary, categorySummary } = useStatistics();
   const { expenses, fetchExpenses, isLoading: expensesLoading } = useExpenses();
   const [currentDate] = useState(new Date());
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
     fetchMonthlySummary(year, month);
     fetchCategorySummary(year, month);
     fetchExpenses({ page: 1, size: 5 });
-  }, [currentDate, fetchMonthlySummary, fetchCategorySummary, fetchExpenses]);
+  }, []);
 
   const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
 

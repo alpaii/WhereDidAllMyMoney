@@ -29,3 +29,41 @@ Next.js(App Router)와 Tailwind CSS를 사용하여 프론트엔드를 구현
 모바일과 데스크톱 모두에서 잘 보이는 **반응형 대시보드 레이아웃** 코드를 작성해줘.
 api 서버에서 구현한 기능들을 수행하는 페이지 생성. 
 별도의 관리자 어드민 대시보드 생성
+
+
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+installHook.js:1 TypeError: Cannot read properties of undefined (reading 'length')
+    at j (page-61ca4eacfe2f817b.js:101:6357)
+    at rE (fd9d1056-0becccd6a3af573e.js:1:40343)
+    at l$ (fd9d1056-0becccd6a3af573e.js:1:59318)
+    at iZ (fd9d1056-0becccd6a3af573e.js:1:117925)
+    at ia (fd9d1056-0becccd6a3af573e.js:1:95164)
+    at fd9d1056-0becccd6a3af573e.js:1:94986
+    at il (fd9d1056-0becccd6a3af573e.js:1:94993)
+    at oJ (fd9d1056-0becccd6a3af573e.js:1:92349)
+    at oZ (fd9d1056-0becccd6a3af573e.js:1:91768)
+    at MessagePort.T (23-a68d7799802ef75f.js:1:83918)
+overrideMethod @ installHook.js:1
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/category/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+:8000/api/v1/statistics/monthly/2026/1:1  Failed to load resource: the server responded with a status of 404 (Not Found)

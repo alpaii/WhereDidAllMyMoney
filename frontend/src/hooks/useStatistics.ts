@@ -34,11 +34,12 @@ export function useStatistics() {
       const response = await api.get<CategorySummary[]>(
         `/statistics/category/${year}/${month}`
       );
-      setCategorySummary(response.data);
+      setCategorySummary(Array.isArray(response.data) ? response.data : []);
       return response.data;
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '카테고리별 통계를 불러오는데 실패했습니다');
+      setCategorySummary([]);
       return [];
     } finally {
       setIsLoading(false);
@@ -52,11 +53,12 @@ export function useStatistics() {
       const response = await api.get<DailyExpense[]>(
         `/statistics/daily/${year}/${month}`
       );
-      setDailyExpenses(response.data);
+      setDailyExpenses(Array.isArray(response.data) ? response.data : []);
       return response.data;
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '일별 통계를 불러오는데 실패했습니다');
+      setDailyExpenses([]);
       return [];
     } finally {
       setIsLoading(false);

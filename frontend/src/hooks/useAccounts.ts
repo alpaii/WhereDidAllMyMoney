@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import type { Account, AccountCreate } from '@/types';
 
@@ -6,16 +6,18 @@ export function useAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasFetched = useRef(false);
 
   const fetchAccounts = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const response = await api.get<Account[]>('/accounts/');
-      setAccounts(response.data);
+      setAccounts(Array.isArray(response.data) ? response.data : []);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '계좌 목록을 불러오는데 실패했습니다');
+      setAccounts([]);
     } finally {
       setIsLoading(false);
     }
@@ -41,8 +43,10 @@ export function useAccounts() {
   };
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
     fetchAccounts();
-  }, [fetchAccounts]);
+  }, []);
 
   return {
     accounts,
