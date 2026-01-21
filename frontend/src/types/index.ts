@@ -50,12 +50,11 @@ export interface AccountCreate {
 // Transfer types
 export interface Transfer {
   id: string;
-  user_id: string;
   from_account_id: string;
   to_account_id: string;
   amount: number;
   memo?: string;
-  transfer_at: string;
+  transferred_at: string;
   created_at: string;
   from_account?: Account;
   to_account?: Account;
@@ -66,7 +65,7 @@ export interface TransferCreate {
   to_account_id: string;
   amount: number;
   memo?: string;
-  transfer_at?: string;
+  transferred_at?: string;
 }
 
 // Category types

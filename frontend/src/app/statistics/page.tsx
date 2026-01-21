@@ -235,7 +235,7 @@ export default function StatisticsPage() {
                           {formatCurrency(cat.total_amount)}
                         </span>
                         <span className="text-sm text-gray-500 ml-2">
-                          ({cat.percentage.toFixed(1)}%)
+                          ({Number(cat.percentage).toFixed(1)}%)
                         </span>
                       </div>
                     </div>
@@ -243,7 +243,7 @@ export default function StatisticsPage() {
                       <div
                         className="h-2 rounded-full transition-all"
                         style={{
-                          width: `${cat.percentage}%`,
+                          width: `${Number(cat.percentage)}%`,
                           backgroundColor: COLORS[index % COLORS.length],
                         }}
                       />

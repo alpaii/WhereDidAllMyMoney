@@ -58,6 +58,14 @@ class TransferCreate(BaseModel):
     transferred_at: Optional[datetime] = None
 
 
+class TransferUpdate(BaseModel):
+    from_account_id: Optional[UUID] = None
+    to_account_id: Optional[UUID] = None
+    amount: Optional[Decimal] = Field(None, gt=0)
+    memo: Optional[str] = Field(None, max_length=500)
+    transferred_at: Optional[datetime] = None
+
+
 class TransferResponse(BaseModel):
     id: UUID
     from_account_id: UUID

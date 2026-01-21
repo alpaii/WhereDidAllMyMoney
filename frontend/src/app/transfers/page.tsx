@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, ArrowRight, Trash2 } from 'lucide-react';
+import { Plus, ArrowRight, Trash2, Pencil } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -15,18 +15,24 @@ import {
   Input,
   Select,
   Modal,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
 } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import api from '@/lib/api';
-import { formatCurrency, formatDateTime } from '@/lib/utils';
-import type { Transfer, TransferCreate, PaginatedResponse } from '@/types';
+import { formatCurrency, formatDateTime, getSeoulNow, toSeoulDateTimeLocal } from '@/lib/utils';
+import type { Transfer, TransferCreate } from '@/types';
 
 const transferSchema = z.object({
   from_account_id: z.string().min(1, '출금 계좌를 선택하세요'),
   to_account_id: z.string().min(1, '입금 계좌를 선택하세요'),
   amount: z.string(),
   memo: z.string().optional(),
-  transfer_at: z.string().optional(),
+  transferred_at: z.string().optional(),
 }).refine((data) => data.from_account_id !== data.to_account_id, {
   message: '출금 계좌와 입금 계좌가 같을 수 없습니다',
   path: ['to_account_id'],
@@ -43,6 +49,7 @@ export default function TransfersPage() {
   const { accounts } = useAccounts();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransfer, setEditingTransfer] = useState<Transfer | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -57,12 +64,12 @@ export default function TransfersPage() {
   const fetchTransfers = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await api.get<PaginatedResponse<Transfer>>(
-        `/transfers/?page=${page}&size=10`
-      );
-      setTransfers(Array.isArray(response.data?.items) ? response.data.items : []);
-      setTotal(response.data?.total || 0);
-      setPages(response.data?.pages || 0);
+      // Backend returns array directly, not paginated response
+      const response = await api.get<Transfer[]>('/transfers/');
+      const data = Array.isArray(response.data) ? response.data : [];
+      setTransfers(data);
+      setTotal(data.length);
+      setPages(1);
     } catch (error) {
       console.error('Failed to fetch transfers:', error);
       setTransfers([]);
@@ -71,7 +78,7 @@ export default function TransfersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page]);
+  }, []);
 
   const lastPageRef = useRef<number | null>(null);
 
@@ -82,18 +89,32 @@ export default function TransfersPage() {
   }, [page]);
 
   const openCreateModal = () => {
+    setEditingTransfer(null);
     reset({
       from_account_id: '',
       to_account_id: '',
       amount: '0',
       memo: '',
-      transfer_at: new Date().toISOString().slice(0, 16),
+      transferred_at: getSeoulNow(),
+    });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (transfer: Transfer) => {
+    setEditingTransfer(transfer);
+    reset({
+      from_account_id: transfer.from_account_id,
+      to_account_id: transfer.to_account_id,
+      amount: String(transfer.amount),
+      memo: transfer.memo || '',
+      transferred_at: toSeoulDateTimeLocal(transfer.transferred_at),
     });
     setIsModalOpen(true);
   };
 
   const handleClose = () => {
     setIsModalOpen(false);
+    setEditingTransfer(null);
     reset();
   };
 
@@ -105,13 +126,18 @@ export default function TransfersPage() {
         to_account_id: data.to_account_id,
         amount: parseFloat(data.amount) || 0,
         memo: data.memo || undefined,
-        transfer_at: data.transfer_at || undefined,
+        transferred_at: data.transferred_at || undefined,
       };
-      await api.post('/transfers/', transferData);
+
+      if (editingTransfer) {
+        await api.patch(`/transfers/${editingTransfer.id}`, transferData);
+      } else {
+        await api.post('/transfers/', transferData);
+      }
       handleClose();
       fetchTransfers();
     } catch (error) {
-      console.error('Failed to create transfer:', error);
+      console.error('Failed to save transfer:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -147,69 +173,120 @@ export default function TransfersPage() {
           </Button>
         </div>
 
-        {/* Transfer list */}
-        <Card>
-          <CardHeader>
-            <CardTitle>이체 내역</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-lg" />
-                ))}
-              </div>
-            ) : transfers.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+        {/* Transfer list - Mobile */}
+        <div className="block lg:hidden space-y-4">
+          {isLoading ? (
+            [1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />
+            ))
+          ) : transfers.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-gray-500">
                 등록된 이체 내역이 없습니다
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {transfers.map((transfer) => (
-                  <div
-                    key={transfer.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-lg gap-4"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="px-3 py-2 bg-white rounded-lg shadow-sm">
-                          <p className="text-sm text-gray-500">출금</p>
-                          <p className="font-medium text-gray-800">
-                            {transfer.from_account?.name || '알 수 없음'}
-                          </p>
-                        </div>
-                        <ArrowRight className="text-gray-400" size={20} />
-                        <div className="px-3 py-2 bg-white rounded-lg shadow-sm">
-                          <p className="text-sm text-gray-500">입금</p>
-                          <p className="font-medium text-gray-800">
-                            {transfer.to_account?.name || '알 수 없음'}
-                          </p>
-                        </div>
+              </CardContent>
+            </Card>
+          ) : (
+            transfers.map((transfer) => (
+              <Card key={transfer.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="px-2 py-1 bg-gray-100 rounded text-sm">
+                        {accounts.find(a => a.id === transfer.from_account_id)?.name || '알 수 없음'}
+                      </div>
+                      <ArrowRight className="text-gray-400" size={16} />
+                      <div className="px-2 py-1 bg-gray-100 rounded text-sm">
+                        {accounts.find(a => a.id === transfer.to_account_id)?.name || '알 수 없음'}
                       </div>
                     </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-4">
-                      <div className="text-right">
-                        <p className="font-bold text-gray-800">
-                          {formatCurrency(Number(transfer.amount))}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {formatDateTime(transfer.transfer_at)}
-                        </p>
-                        {transfer.memo && (
-                          <p className="text-sm text-gray-500 mt-1">{transfer.memo}</p>
-                        )}
+                    <div className="text-right">
+                      <p className="font-bold text-gray-800">
+                        {formatCurrency(Number(transfer.amount))}
+                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <button
+                          onClick={() => openEditModal(transfer)}
+                          className="p-1 text-gray-500 hover:text-primary-600"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(transfer.id)}
+                          className="p-1 text-gray-500 hover:text-red-600"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleDelete(transfer.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 size={18} />
-                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="mt-2 text-sm text-gray-500">
+                    {formatDateTime(transfer.transferred_at)}
+                    {transfer.memo && <span className="ml-2">· {transfer.memo}</span>}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        {/* Transfer list - Desktop */}
+        <Card className="hidden lg:block">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>날짜</TableHead>
+                  <TableHead>출금 계좌</TableHead>
+                  <TableHead>입금 계좌</TableHead>
+                  <TableHead>메모</TableHead>
+                  <TableHead className="text-right">금액</TableHead>
+                  <TableHead className="text-right">작업</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      로딩 중...
+                    </TableCell>
+                  </TableRow>
+                ) : transfers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                      등록된 이체 내역이 없습니다
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  transfers.map((transfer) => (
+                    <TableRow key={transfer.id}>
+                      <TableCell>{formatDateTime(transfer.transferred_at)}</TableCell>
+                      <TableCell>{accounts.find(a => a.id === transfer.from_account_id)?.name || '알 수 없음'}</TableCell>
+                      <TableCell>{accounts.find(a => a.id === transfer.to_account_id)?.name || '알 수 없음'}</TableCell>
+                      <TableCell className="max-w-xs truncate">{transfer.memo || '-'}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(Number(transfer.amount))}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEditModal(transfer)}
+                            className="p-1 text-gray-500 hover:text-primary-600"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(transfer.id)}
+                            className="p-1 text-gray-500 hover:text-red-600"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 
@@ -239,7 +316,7 @@ export default function TransfersPage() {
         )}
 
         {/* Modal */}
-        <Modal isOpen={isModalOpen} onClose={handleClose} title="이체 추가">
+        <Modal isOpen={isModalOpen} onClose={handleClose} title={editingTransfer ? '이체 수정' : '이체 추가'}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Select
               id="from_account_id"
@@ -267,11 +344,11 @@ export default function TransfersPage() {
             />
 
             <Input
-              id="transfer_at"
+              id="transferred_at"
               type="datetime-local"
               label="이체 일시"
-              error={errors.transfer_at?.message}
-              {...register('transfer_at')}
+              error={errors.transferred_at?.message}
+              {...register('transferred_at')}
             />
 
             <Input
@@ -287,7 +364,7 @@ export default function TransfersPage() {
                 취소
               </Button>
               <Button type="submit" isLoading={isSubmitting}>
-                이체
+                {editingTransfer ? '수정' : '이체'}
               </Button>
             </div>
           </form>
