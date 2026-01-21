@@ -122,56 +122,9 @@ export default function AccountsPage() {
     }
   };
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
-  const bankTotal = accounts
-    .filter((acc) => acc.account_type === 'bank')
-    .reduce((sum, acc) => sum + Number(acc.balance), 0);
-  const creditCardTotal = accounts
-    .filter((acc) => acc.account_type === 'credit_card')
-    .reduce((sum, acc) => sum + Number(acc.balance), 0);
-  const prepaidTotal = accounts
-    .filter((acc) => acc.account_type === 'prepaid')
-    .reduce((sum, acc) => sum + Number(acc.balance), 0);
-
   return (
     <DashboardLayout title="계좌 관리">
       <div className="space-y-6">
-        {/* Summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-gray-600">총 잔액</p>
-              <p className="text-2xl font-bold text-gray-800 mt-1">
-                {formatCurrency(totalBalance)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-gray-600">은행계좌</p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">
-                {formatCurrency(bankTotal)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-gray-600">신용카드</p>
-              <p className={`text-2xl font-bold mt-1 ${creditCardTotal < 0 ? 'text-red-600' : 'text-purple-600'}`}>
-                {formatCurrency(creditCardTotal)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-gray-600">선불/포인트</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
-                {formatCurrency(prepaidTotal)}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Accounts list */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
