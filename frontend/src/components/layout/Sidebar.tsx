@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
   Wallet,
   CreditCard,
   ArrowLeftRight,
@@ -26,7 +25,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: '대시보드', href: '/dashboard', icon: <LayoutDashboard size={20} /> },
   { label: '계좌 관리', href: '/accounts', icon: <Wallet size={20} /> },
   { label: '지출 내역', href: '/expenses', icon: <CreditCard size={20} /> },
   { label: '이체 내역', href: '/transfers', icon: <ArrowLeftRight size={20} /> },
