@@ -8,18 +8,15 @@ import {
   TrendingDown,
   CreditCard,
   ArrowRight,
-  Plus,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
-import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useStatistics } from '@/hooks/useStatistics';
 import { useExpenses } from '@/hooks/useExpenses';
 import { formatCurrency, formatDate, getAccountTypeLabel, getAccountTypeColor } from '@/lib/utils';
-import { useAuthStore } from '@/store/auth';
 
 export default function DashboardPage() {
-  const { user } = useAuthStore();
   const { accounts, isLoading: accountsLoading } = useAccounts();
   const { fetchMonthlySummary, fetchCategorySummary, monthlySummary, categorySummary } = useStatistics();
   const { expenses, fetchExpenses, isLoading: expensesLoading } = useExpenses();
@@ -42,22 +39,6 @@ export default function DashboardPage() {
   return (
     <DashboardLayout title="대시보드">
       <div className="space-y-6">
-        {/* Welcome message */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">
-              안녕하세요, {user?.name}님!
-            </h2>
-            <p className="text-gray-600 mt-1">오늘의 소비 현황을 확인하세요</p>
-          </div>
-          <Link href="/expenses">
-            <Button>
-              <Plus size={18} />
-              지출 추가
-            </Button>
-          </Link>
-        </div>
-
         {/* Stats cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
