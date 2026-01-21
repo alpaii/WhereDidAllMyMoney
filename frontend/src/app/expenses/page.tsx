@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -74,9 +74,13 @@ export default function ExpensesPage() {
     }
   }, [watchCategoryId, selectedCategoryId, setValue]);
 
+  const lastPageRef = useRef<number | null>(null);
+
   useEffect(() => {
+    if (lastPageRef.current === page) return;
+    lastPageRef.current = page;
     fetchExpenses({ page });
-  }, [page, fetchExpenses]);
+  }, [page]);
 
   const openCreateModal = () => {
     setEditingExpense(null);

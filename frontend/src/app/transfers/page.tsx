@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -60,19 +60,26 @@ export default function TransfersPage() {
       const response = await api.get<PaginatedResponse<Transfer>>(
         `/transfers/?page=${page}&size=10`
       );
-      setTransfers(response.data.items);
-      setTotal(response.data.total);
-      setPages(response.data.pages);
+      setTransfers(Array.isArray(response.data?.items) ? response.data.items : []);
+      setTotal(response.data?.total || 0);
+      setPages(response.data?.pages || 0);
     } catch (error) {
       console.error('Failed to fetch transfers:', error);
+      setTransfers([]);
+      setTotal(0);
+      setPages(0);
     } finally {
       setIsLoading(false);
     }
   }, [page]);
 
+  const lastPageRef = useRef<number | null>(null);
+
   useEffect(() => {
+    if (lastPageRef.current === page) return;
+    lastPageRef.current = page;
     fetchTransfers();
-  }, [fetchTransfers]);
+  }, [page]);
 
   const openCreateModal = () => {
     reset({

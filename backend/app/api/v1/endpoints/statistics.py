@@ -327,22 +327,25 @@ async def get_daily_expenses(
         Expense.expense_at <= end_date
     ]
 
+    # Use date cast instead of to_char for proper GROUP BY
+    date_expr = func.date(Expense.expense_at)
+
     query = (
         select(
-            func.to_char(Expense.expense_at, 'YYYY-MM-DD').label("date"),
+            date_expr.label("date"),
             func.coalesce(func.sum(Expense.amount), 0).label("total"),
             func.count(Expense.id).label("count")
         )
         .where(*conditions)
-        .group_by(func.to_char(Expense.expense_at, 'YYYY-MM-DD'))
-        .order_by(func.to_char(Expense.expense_at, 'YYYY-MM-DD'))
+        .group_by(date_expr)
+        .order_by(date_expr)
     )
 
     result = await db.execute(query)
 
     return [
         DailyExpenseResponse(
-            date=row.date,
+            date=str(row.date),
             total_amount=Decimal(str(row.total)),
             expense_count=row.count
         )

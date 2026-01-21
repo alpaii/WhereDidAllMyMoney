@@ -4,7 +4,8 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.api.v1.router import api_router
-from app.db.database import engine, Base
+from app.db.database import engine, Base, AsyncSessionLocal
+from app.db.seed import seed_categories
 
 
 @asynccontextmanager
@@ -12,6 +13,11 @@ async def lifespan(app: FastAPI):
     # Startup: Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Seed default categories
+    async with AsyncSessionLocal() as session:
+        await seed_categories(session)
+
     yield
     # Shutdown
     await engine.dispose()

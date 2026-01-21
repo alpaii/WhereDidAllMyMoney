@@ -2,6 +2,16 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import type { Category, Subcategory, Product, ProductCreate } from '@/types';
 
+export interface CategoryCreate {
+  name: string;
+  icon?: string;
+}
+
+export interface SubcategoryCreateData {
+  category_id: string;
+  name: string;
+}
+
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,6 +33,28 @@ export function useCategories() {
     }
   }, []);
 
+  const createCategory = async (data: CategoryCreate) => {
+    const response = await api.post<Category>('/categories/', data);
+    await fetchCategories();
+    return response.data;
+  };
+
+  const deleteCategory = async (id: string) => {
+    await api.delete(`/categories/${id}`);
+    setCategories((prev) => prev.filter((cat) => cat.id !== id));
+  };
+
+  const createSubcategory = async (data: SubcategoryCreateData) => {
+    const response = await api.post<Subcategory>('/categories/subcategories', data);
+    await fetchCategories();
+    return response.data;
+  };
+
+  const deleteSubcategory = async (id: string) => {
+    await api.delete(`/categories/subcategories/${id}`);
+    await fetchCategories();
+  };
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
@@ -34,6 +66,10 @@ export function useCategories() {
     isLoading,
     error,
     fetchCategories,
+    createCategory,
+    deleteCategory,
+    createSubcategory,
+    deleteSubcategory,
   };
 }
 
