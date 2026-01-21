@@ -119,6 +119,12 @@ export interface Expense {
   expense_at: string;
   created_at: string;
   updated_at: string;
+  // Backend returns flat field names from ExpenseWithDetails
+  account_name?: string;
+  category_name?: string;
+  subcategory_name?: string;
+  product_name?: string;
+  // Keep nested objects for backwards compatibility
   account?: Account;
   category?: Category;
   subcategory?: Subcategory;

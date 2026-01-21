@@ -24,22 +24,27 @@ export function useExpenses(options: UseExpensesOptions = {}) {
       setError(null);
 
       const params = new URLSearchParams();
-      const finalOpts = { ...options, ...opts };
 
-      if (finalOpts.page) params.append('page', String(finalOpts.page));
-      if (finalOpts.size) params.append('size', String(finalOpts.size));
-      if (finalOpts.startDate) params.append('start_date', finalOpts.startDate);
-      if (finalOpts.endDate) params.append('end_date', finalOpts.endDate);
-      if (finalOpts.categoryId) params.append('category_id', finalOpts.categoryId);
-      if (finalOpts.accountId) params.append('account_id', finalOpts.accountId);
+      // Backend uses limit/offset, not page/size
+      const limit = opts?.size || 50;
+      const offset = opts?.page ? (opts.page - 1) * limit : 0;
 
-      const response = await api.get<PaginatedResponse<Expense>>(
+      params.append('limit', String(limit));
+      params.append('offset', String(offset));
+      if (opts?.startDate) params.append('start_date', opts.startDate);
+      if (opts?.endDate) params.append('end_date', opts.endDate);
+      if (opts?.categoryId) params.append('category_id', opts.categoryId);
+      if (opts?.accountId) params.append('account_id', opts.accountId);
+
+      // Backend returns array directly, not paginated response
+      const response = await api.get<Expense[]>(
         `/expenses/?${params.toString()}`
       );
 
-      setExpenses(Array.isArray(response.data?.items) ? response.data.items : []);
-      setTotal(response.data?.total || 0);
-      setPages(response.data?.pages || 0);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setExpenses(data);
+      setTotal(data.length);
+      setPages(1); // Backend doesn't return pagination info
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '지출 목록을 불러오는데 실패했습니다');
@@ -49,7 +54,7 @@ export function useExpenses(options: UseExpensesOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options]);
+  }, []);
 
   const createExpense = async (data: ExpenseCreate) => {
     const response = await api.post<Expense>('/expenses/', data);
@@ -58,7 +63,7 @@ export function useExpenses(options: UseExpensesOptions = {}) {
   };
 
   const updateExpense = async (id: string, data: Partial<ExpenseCreate>) => {
-    const response = await api.put<Expense>(`/expenses/${id}`, data);
+    const response = await api.patch<Expense>(`/expenses/${id}`, data);
     setExpenses((prev) =>
       prev.map((expense) => (expense.id === id ? response.data : expense))
     );

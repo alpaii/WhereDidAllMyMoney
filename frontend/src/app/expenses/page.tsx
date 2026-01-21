@@ -25,7 +25,7 @@ import {
 import { useExpenses } from '@/hooks/useExpenses';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories, useSubcategories } from '@/hooks/useCategories';
-import { formatCurrency, formatDateTime } from '@/lib/utils';
+import { formatCurrency, formatDateTime, toSeoulDateTimeLocal, getSeoulNow } from '@/lib/utils';
 import type { Expense } from '@/types';
 
 const expenseSchema = z.object({
@@ -79,8 +79,8 @@ export default function ExpensesPage() {
   useEffect(() => {
     if (lastPageRef.current === page) return;
     lastPageRef.current = page;
-    fetchExpenses({ page });
-  }, [page]);
+    fetchExpenses({ page, size: 10 });
+  }, [page, fetchExpenses]);
 
   const openCreateModal = () => {
     setEditingExpense(null);
@@ -92,7 +92,7 @@ export default function ExpensesPage() {
       amount: '0',
       memo: '',
       purchase_url: '',
-      expense_at: new Date().toISOString().slice(0, 16),
+      expense_at: getSeoulNow(),
     });
     setIsModalOpen(true);
   };
@@ -107,7 +107,7 @@ export default function ExpensesPage() {
       amount: String(expense.amount),
       memo: expense.memo || '',
       purchase_url: expense.purchase_url || '',
-      expense_at: expense.expense_at.slice(0, 16),
+      expense_at: toSeoulDateTimeLocal(expense.expense_at),
     });
     setIsModalOpen(true);
   };
@@ -138,7 +138,7 @@ export default function ExpensesPage() {
         await createExpense(expenseData);
       }
       handleClose();
-      fetchExpenses({ page });
+      fetchExpenses({ page, size: 10 });
     } catch (error) {
       console.error('Failed to save expense:', error);
     } finally {
@@ -210,16 +210,19 @@ export default function ExpensesPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl">
-                        {expense.category?.icon || '💰'}
+                        💰
                       </div>
                       <div>
                         <p className="font-medium text-gray-800">
-                          {expense.subcategory?.name || expense.category?.name || '미분류'}
+                          {expense.category_name || '미분류'}
+                          {expense.subcategory_name && (
+                            <span className="text-gray-500"> &gt; {expense.subcategory_name}</span>
+                          )}
                         </p>
                         <p className="text-sm text-gray-500">
                           {formatDateTime(expense.expense_at)}
                         </p>
-                        <p className="text-sm text-gray-500">{expense.account?.name}</p>
+                        <p className="text-sm text-gray-500">{expense.account_name}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -295,10 +298,13 @@ export default function ExpensesPage() {
                     <TableRow key={expense.id}>
                       <TableCell>{formatDateTime(expense.expense_at)}</TableCell>
                       <TableCell>
-                        <span className="mr-2">{expense.category?.icon || '💰'}</span>
-                        {expense.subcategory?.name || expense.category?.name || '미분류'}
+                        <span className="mr-2">💰</span>
+                        {expense.category_name || '미분류'}
+                        {expense.subcategory_name && (
+                          <span className="text-gray-500"> &gt; {expense.subcategory_name}</span>
+                        )}
                       </TableCell>
-                      <TableCell>{expense.account?.name}</TableCell>
+                      <TableCell>{expense.account_name}</TableCell>
                       <TableCell className="max-w-xs truncate">{expense.memo || '-'}</TableCell>
                       <TableCell className="text-right font-medium">
                         -{formatCurrency(Number(expense.amount))}
