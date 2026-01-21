@@ -123,18 +123,19 @@ export default function AccountsPage() {
   };
 
   return (
-    <DashboardLayout title="계좌 관리">
+    <DashboardLayout
+      title="계좌 관리"
+      action={
+        <Button onClick={openCreateModal}>
+          <Plus size={18} />
+          계좌 추가
+        </Button>
+      }
+    >
       <div className="space-y-6">
         {/* Accounts list */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>계좌 목록</CardTitle>
-            <Button onClick={openCreateModal}>
-              <Plus size={18} />
-              계좌 추가
-            </Button>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {isLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (

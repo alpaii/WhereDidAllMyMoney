@@ -9,9 +9,10 @@ import { useAuthStore } from '@/store/auth';
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title: string;
+  action?: React.ReactNode;
 }
 
-export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, action }: DashboardLayoutProps) {
   const router = useRouter();
   const { isAuthenticated, fetchUser, isLoading } = useAuthStore();
 
@@ -41,7 +42,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
-        <Header title={title} />
+        <Header title={title} action={action} />
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {children}
         </main>
