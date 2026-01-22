@@ -126,9 +126,8 @@ export default function AccountsPage() {
     <DashboardLayout
       title="계좌 관리"
       action={
-        <Button onClick={openCreateModal}>
-          <Plus size={18} />
-          계좌 추가
+        <Button onClick={openCreateModal} size="icon" title="계좌 추가">
+          <Plus size={20} />
         </Button>
       }
     >

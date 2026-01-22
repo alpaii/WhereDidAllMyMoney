@@ -174,9 +174,8 @@ export default function ExpensesPage() {
     <DashboardLayout
       title="지출 내역"
       action={
-        <Button onClick={openCreateModal}>
-          <Plus size={18} />
-          지출 추가
+        <Button onClick={openCreateModal} size="icon" title="지출 추가">
+          <Plus size={20} />
         </Button>
       }
     >

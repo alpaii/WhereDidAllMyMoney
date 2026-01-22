@@ -189,12 +189,15 @@ export default function CategoriesPage() {
     <DashboardLayout
       title="카테고리"
       action={
-        <Button onClick={() => {
-          categoryForm.reset({ name: '', icon: '' });
-          setIsCategoryModalOpen(true);
-        }}>
-          <Plus size={18} />
-          카테고리 추가
+        <Button
+          onClick={() => {
+            categoryForm.reset({ name: '', icon: '' });
+            setIsCategoryModalOpen(true);
+          }}
+          size="icon"
+          title="카테고리 추가"
+        >
+          <Plus size={20} />
         </Button>
       }
     >

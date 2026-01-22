@@ -160,9 +160,8 @@ export default function TransfersPage() {
     <DashboardLayout
       title="이체 내역"
       action={
-        <Button onClick={openCreateModal}>
-          <Plus size={18} />
-          이체 추가
+        <Button onClick={openCreateModal} size="icon" title="이체 추가">
+          <Plus size={20} />
         </Button>
       }
     >
