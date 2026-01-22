@@ -36,7 +36,7 @@ export function TableHead({ children, className, colSpan, rowSpan }: TableCellPr
       colSpan={colSpan}
       rowSpan={rowSpan}
       className={cn(
-        'px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider',
+        'px-4 py-3 text-left text-base font-semibold text-gray-600',
         className
       )}
     >

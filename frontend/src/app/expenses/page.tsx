@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, ExternalLink, Filter } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -42,7 +42,7 @@ type ExpenseForm = z.infer<typeof expenseSchema>;
 
 export default function ExpensesPage() {
   const [page, setPage] = useState(1);
-  const { expenses, total, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense } =
+  const { expenses, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense } =
     useExpenses({ page, size: 10 });
   const { accounts } = useAccounts();
   const { categories } = useCategories();
@@ -52,7 +52,6 @@ export default function ExpensesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
 
   const {
     register,
@@ -172,25 +171,16 @@ export default function ExpensesPage() {
   ];
 
   return (
-    <DashboardLayout title="지출 내역">
+    <DashboardLayout
+      title="지출 내역"
+      action={
+        <Button onClick={openCreateModal}>
+          <Plus size={18} />
+          지출 추가
+        </Button>
+      }
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-gray-600">총 {total}건의 지출 내역</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => setFilterOpen(!filterOpen)}>
-              <Filter size={18} />
-              필터
-            </Button>
-            <Button onClick={openCreateModal}>
-              <Plus size={18} />
-              지출 추가
-            </Button>
-          </div>
-        </div>
-
         {/* Expense list - Mobile */}
         <div className="lg:hidden space-y-4">
           {isLoading ? (

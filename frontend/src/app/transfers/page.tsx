@@ -42,7 +42,6 @@ type TransferForm = z.infer<typeof transferSchema>;
 
 export default function TransfersPage() {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,12 +67,10 @@ export default function TransfersPage() {
       const response = await api.get<Transfer[]>('/transfers/');
       const data = Array.isArray(response.data) ? response.data : [];
       setTransfers(data);
-      setTotal(data.length);
       setPages(1);
     } catch (error) {
       console.error('Failed to fetch transfers:', error);
       setTransfers([]);
-      setTotal(0);
       setPages(0);
     } finally {
       setIsLoading(false);
@@ -160,19 +157,16 @@ export default function TransfersPage() {
   ];
 
   return (
-    <DashboardLayout title="이체 내역">
+    <DashboardLayout
+      title="이체 내역"
+      action={
+        <Button onClick={openCreateModal}>
+          <Plus size={18} />
+          이체 추가
+        </Button>
+      }
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-gray-600">총 {total}건의 이체 내역</p>
-          </div>
-          <Button onClick={openCreateModal}>
-            <Plus size={18} />
-            이체 추가
-          </Button>
-        </div>
-
         {/* Transfer list - Mobile */}
         <div className="block lg:hidden space-y-4">
           {isLoading ? (
