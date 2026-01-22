@@ -52,6 +52,7 @@ export default function ExpensesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastSelectedAccountId, setLastSelectedAccountId] = useState<string | null>(null);
 
   const {
     register,
@@ -84,8 +85,9 @@ export default function ExpensesPage() {
   const openCreateModal = () => {
     setEditingExpense(null);
     setSelectedCategoryId(null);
+    const defaultAccountId = lastSelectedAccountId || accounts[0]?.id || '';
     reset({
-      account_id: '',
+      account_id: defaultAccountId,
       category_id: '',
       subcategory_id: '',
       amount: '0',
@@ -136,6 +138,7 @@ export default function ExpensesPage() {
       } else {
         await createExpense(expenseData);
       }
+      setLastSelectedAccountId(data.account_id);
       handleClose();
       fetchExpenses({ page, size: 10 });
     } catch (error) {
@@ -155,10 +158,7 @@ export default function ExpensesPage() {
     }
   };
 
-  const accountOptions = [
-    { value: '', label: '계좌 선택' },
-    ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
-  ];
+  const accountOptions = accounts.map((acc) => ({ value: acc.id, label: acc.name }));
 
   const categoryOptions = [
     { value: '', label: '카테고리 선택' },
