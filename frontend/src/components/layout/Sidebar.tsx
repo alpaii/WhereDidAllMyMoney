@@ -44,14 +44,27 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <button
-        onClick={toggleSidebar}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md"
-        aria-label="Toggle menu"
-      >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      {/* Mobile menu button (hamburger) */}
+      {!isOpen && (
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden fixed top-2.5 left-4 z-50 p-2 bg-white rounded-lg shadow-md"
+          aria-label="Open menu"
+        >
+          <Menu size={24} />
+        </button>
+      )}
+
+      {/* Mobile close button (inside sidebar) */}
+      {isOpen && (
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden fixed top-2.5 left-56 z-50 p-2 bg-white rounded-lg shadow-md"
+          aria-label="Close menu"
+        >
+          <X size={24} />
+        </button>
+      )}
 
       {/* Overlay for mobile */}
       {isOpen && (
