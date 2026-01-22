@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronDown, ChevronRight, Tag, Plus, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, X } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Modal } from '@/components/ui';
+import { Card, CardContent, Button, Input, Modal } from '@/components/ui';
 import { useCategories } from '@/hooks/useCategories';
 import type { Category } from '@/types';
 
@@ -186,30 +186,21 @@ export default function CategoriesPage() {
   };
 
   return (
-    <DashboardLayout title="카테고리">
+    <DashboardLayout
+      title="카테고리"
+      action={
+        <Button onClick={() => {
+          categoryForm.reset({ name: '', icon: '' });
+          setIsCategoryModalOpen(true);
+        }}>
+          <Plus size={18} />
+          카테고리 추가
+        </Button>
+      }
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-gray-600">총 {categories.length}개의 카테고리</p>
-          </div>
-          <Button onClick={() => {
-            categoryForm.reset({ name: '', icon: '' });
-            setIsCategoryModalOpen(true);
-          }}>
-            <Plus size={18} />
-            카테고리 추가
-          </Button>
-        </div>
-
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tag size={20} />
-              카테고리 목록
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {isLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3, 4].map((i) => (
