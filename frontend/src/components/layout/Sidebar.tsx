@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+import { useUIStore } from '@/store/ui';
 
 interface NavItem {
   label: string;
@@ -37,12 +38,11 @@ const navItems: NavItem[] = [
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const { logout, user } = useAuthStore();
+  const { sidebarCollapsed: isCollapsed, toggleSidebar: toggleCollapse } = useUIStore();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
-  const toggleCollapse = () => setIsCollapsed(!isCollapsed);
 
   return (
     <>
@@ -79,7 +79,7 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-40 bg-white border-r border-gray-200 transition-all duration-300',
+          'fixed inset-y-0 left-0 z-40 bg-white border-r border-gray-200 transition-all duration-300',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           isCollapsed ? 'w-20' : 'w-64'
         )}
