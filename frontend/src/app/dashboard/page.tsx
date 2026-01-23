@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import {
-  Wallet,
   TrendingUp,
   TrendingDown,
   CreditCard,
@@ -49,9 +48,6 @@ export default function DashboardPage() {
                   <p className="text-2xl font-bold text-gray-800 mt-1">
                     {formatCurrency(totalBalance)}
                   </p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Wallet className="text-blue-600" size={24} />
                 </div>
               </div>
             </CardContent>
@@ -136,16 +132,11 @@ export default function DashboardPage() {
                       key={account.id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-                          <Wallet size={20} className="text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">{account.name}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${getAccountTypeColor(account.account_type)}`}>
-                            {getAccountTypeLabel(account.account_type)}
-                          </span>
-                        </div>
+                      <div>
+                        <p className="font-medium text-gray-800">{account.name}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${getAccountTypeColor(account.account_type)}`}>
+                          {getAccountTypeLabel(account.account_type)}
+                        </span>
                       </div>
                       <p className={`font-semibold ${Number(account.balance) < 0 ? 'text-red-600' : 'text-gray-800'}`}>
                         {formatCurrency(Number(account.balance))}
@@ -179,7 +170,7 @@ export default function DashboardPage() {
                     <div key={cat.category_id}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm text-gray-700">
-                          {cat.category_icon} {cat.category_name}
+                          {cat.category_name}
                         </span>
                         <span className="text-sm font-medium text-gray-800">
                           {formatCurrency(cat.total_amount)}
@@ -228,18 +219,13 @@ export default function DashboardPage() {
                     key={expense.id}
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-xl">
-                        {expense.category?.icon || '💰'}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          {expense.subcategory?.name || expense.category?.name || '미분류'}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(expense.expense_at, 'M월 d일')} · {expense.account?.name}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        {expense.subcategory?.name || expense.category?.name || '미분류'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(expense.expense_at, 'M월 d일')} · {expense.account?.name}
+                      </p>
                     </div>
                     <p className="font-semibold text-gray-800">
                       -{formatCurrency(Number(expense.amount))}
