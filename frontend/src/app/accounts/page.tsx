@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, Wallet } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -143,7 +143,6 @@ export default function AccountsPage() {
               </div>
             ) : accounts.length === 0 ? (
               <div className="text-center py-12">
-                <Wallet size={48} className="mx-auto text-gray-400 mb-4" />
                 <p className="text-gray-500">등록된 계좌가 없습니다</p>
                 <Button onClick={openCreateModal} className="mt-4">
                   첫 번째 계좌 추가하기
@@ -157,9 +156,6 @@ export default function AccountsPage() {
                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-lg gap-4"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                        <Wallet size={24} className="text-gray-600" />
-                      </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-800">{account.name}</p>

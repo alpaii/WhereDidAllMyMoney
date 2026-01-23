@@ -175,7 +175,7 @@ export default function ExpensesPage() {
 
   const categoryOptions = [
     { value: '', label: '카테고리 선택' },
-    ...categories.map((cat) => ({ value: cat.id, label: `${cat.icon || ''} ${cat.name}` })),
+    ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
   ];
 
   const subcategoryOptions = [
@@ -211,9 +211,6 @@ export default function ExpensesPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl">
-                        💰
-                      </div>
                       <div>
                         <p className="font-medium text-gray-800">
                           {expense.category_name || '미분류'}
@@ -300,7 +297,6 @@ export default function ExpensesPage() {
                     <TableRow key={expense.id}>
                       <TableCell>{formatDateTime(expense.expense_at)}</TableCell>
                       <TableCell>
-                        <span className="mr-2">💰</span>
                         {expense.category_name || '미분류'}
                         {expense.subcategory_name && (
                           <span className="text-gray-500"> &gt; {expense.subcategory_name}</span>

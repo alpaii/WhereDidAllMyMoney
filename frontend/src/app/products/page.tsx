@@ -157,7 +157,7 @@ export default function ProductsPage() {
 
   const categoryOptions = [
     { value: '', label: '카테고리 선택' },
-    ...categories.map((cat) => ({ value: cat.id, label: `${cat.icon || ''} ${cat.name}` })),
+    ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
   ];
 
   const subcategoryOptions = [
@@ -170,7 +170,7 @@ export default function ProductsPage() {
     for (const category of categories) {
       const sub = category.subcategories?.find(s => s.id === subcategoryId);
       if (sub) {
-        return `${category.icon || ''} ${category.name} > ${sub.name}`;
+        return `${category.name} > ${sub.name}`;
       }
     }
     return '미분류';
@@ -204,9 +204,6 @@ export default function ProductsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl">
-                        📦
-                      </div>
                       <div>
                         <p className="font-medium text-gray-800">{product.name}</p>
                         <p className="text-sm text-gray-500">
@@ -274,10 +271,7 @@ export default function ProductsPage() {
                 ) : (
                   products.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell>
-                        <span className="mr-2">📦</span>
-                        {product.name}
-                      </TableCell>
+                      <TableCell>{product.name}</TableCell>
                       <TableCell>{getSubcategoryName(product.subcategory_id)}</TableCell>
                       <TableCell>
                         {product.default_price

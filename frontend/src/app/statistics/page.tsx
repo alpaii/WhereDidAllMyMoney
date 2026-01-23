@@ -224,7 +224,7 @@ export default function StatisticsPage() {
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         />
                         <span className="text-gray-700">
-                          {cat.category_icon} {cat.category_name}
+                          {cat.category_name}
                         </span>
                         <span className="text-sm text-gray-500">
                           ({cat.expense_count}건)

@@ -12,7 +12,6 @@ import type { Category } from '@/types';
 
 const categorySchema = z.object({
   name: z.string().min(1, '카테고리 이름을 입력하세요'),
-  icon: z.string().optional(),
 });
 
 const subcategorySchema = z.object({
@@ -43,7 +42,6 @@ function CategoryItem({
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-3 flex-1 text-left"
         >
-          <span className="text-2xl">{category.icon || '📦'}</span>
           <span className="font-medium text-gray-800">{category.name}</span>
           {hasSubcategories && (
             <span className="text-sm text-gray-500">
@@ -127,7 +125,6 @@ export default function CategoriesPage() {
       setIsSubmitting(true);
       await createCategory({
         name: data.name,
-        icon: data.icon || undefined,
       });
       setIsCategoryModalOpen(false);
       categoryForm.reset();
@@ -191,7 +188,7 @@ export default function CategoriesPage() {
       action={
         <Button
           onClick={() => {
-            categoryForm.reset({ name: '', icon: '' });
+            categoryForm.reset({ name: '' });
             setIsCategoryModalOpen(true);
           }}
           size="icon"
@@ -243,13 +240,6 @@ export default function CategoriesPage() {
               placeholder="예: 식비"
               error={categoryForm.formState.errors.name?.message}
               {...categoryForm.register('name')}
-            />
-            <Input
-              id="icon"
-              label="아이콘 (이모지)"
-              placeholder="예: 🍔"
-              error={categoryForm.formState.errors.icon?.message}
-              {...categoryForm.register('icon')}
             />
             <div className="flex justify-end gap-3 mt-6">
               <Button
