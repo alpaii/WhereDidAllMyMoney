@@ -67,12 +67,25 @@ export default function ExpensesPage() {
 
   const watchCategoryId = watch('category_id');
 
+  // 천단위 콤마 포맷 함수
+  const formatAmountWithComma = (value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, '');
+    if (!numericValue) return '';
+    return Number(numericValue).toLocaleString('ko-KR');
+  };
+
   useEffect(() => {
     if (watchCategoryId && watchCategoryId !== selectedCategoryId) {
       setSelectedCategoryId(watchCategoryId);
       setValue('subcategory_id', '');
     }
   }, [watchCategoryId, selectedCategoryId, setValue]);
+
+  // 금액 입력 시 천단위 콤마 자동 적용
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatAmountWithComma(e.target.value);
+    setValue('amount', formatted);
+  };
 
   const lastPageRef = useRef<number | null>(null);
 
@@ -90,7 +103,7 @@ export default function ExpensesPage() {
       account_id: defaultAccountId,
       category_id: '',
       subcategory_id: '',
-      amount: '0',
+      amount: '10,000',
       memo: '',
       purchase_url: '',
       expense_at: getSeoulNow(),
@@ -105,7 +118,7 @@ export default function ExpensesPage() {
       account_id: expense.account_id,
       category_id: expense.category_id,
       subcategory_id: expense.subcategory_id,
-      amount: String(expense.amount),
+      amount: Math.round(Number(expense.amount)).toLocaleString('ko-KR'),
       memo: expense.memo || '',
       purchase_url: expense.purchase_url || '',
       expense_at: toSeoulDateTimeLocal(expense.expense_at),
@@ -127,7 +140,7 @@ export default function ExpensesPage() {
         account_id: data.account_id,
         category_id: data.category_id,
         subcategory_id: data.subcategory_id,
-        amount: parseFloat(data.amount) || 0,
+        amount: parseFloat(data.amount.replace(/,/g, '')) || 0,
         memo: data.memo || undefined,
         purchase_url: data.purchase_url || undefined,
         expense_at: data.expense_at || undefined,
@@ -394,11 +407,11 @@ export default function ExpensesPage() {
 
             <Input
               id="amount"
-              type="number"
+              type="text"
               label="금액"
-              placeholder="0"
+              placeholder="10,000"
               error={errors.amount?.message}
-              {...register('amount')}
+              {...register('amount', { onChange: handleAmountChange })}
             />
 
             <Input
