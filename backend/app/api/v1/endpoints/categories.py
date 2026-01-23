@@ -13,7 +13,7 @@ from app.schemas.category import (
     SubcategoryCreate, SubcategoryResponse,
     ProductCreate, ProductUpdate, ProductResponse
 )
-from app.core.deps import get_current_user, get_current_admin_user
+from app.core.deps import get_current_user
 
 router = APIRouter()
 
@@ -21,10 +21,14 @@ router = APIRouter()
 # ==================== Categories ====================
 
 @router.get("/", response_model=List[CategoryWithSubcategories])
-async def get_categories(db: AsyncSession = Depends(get_db)):
-    """카테고리 목록 조회 (소 카테고리 포함)"""
+async def get_categories(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """카테고리 목록 조회 (본인 카테고리만, 소 카테고리 포함)"""
     result = await db.execute(
         select(Category)
+        .where(Category.user_id == current_user.id)
         .options(selectinload(Category.subcategories))
         .order_by(Category.name)
     )
@@ -35,12 +39,15 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
 async def create_category(
     category_data: CategoryCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """카테고리 생성 (관리자 전용)"""
-    # Check if name already exists
+    """카테고리 생성"""
+    # Check if name already exists for this user
     result = await db.execute(
-        select(Category).where(Category.name == category_data.name)
+        select(Category).where(
+            Category.user_id == current_user.id,
+            Category.name == category_data.name
+        )
     )
     if result.scalar_one_or_none():
         raise HTTPException(
@@ -49,6 +56,7 @@ async def create_category(
         )
 
     category = Category(
+        user_id=current_user.id,
         name=category_data.name,
         icon=category_data.icon
     )
@@ -63,10 +71,15 @@ async def create_category(
 async def delete_category(
     category_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """카테고리 삭제 (관리자 전용)"""
-    result = await db.execute(select(Category).where(Category.id == category_id))
+    """카테고리 삭제"""
+    result = await db.execute(
+        select(Category).where(
+            Category.id == category_id,
+            Category.user_id == current_user.id
+        )
+    )
     category = result.scalar_one_or_none()
 
     if not category:
@@ -84,9 +97,23 @@ async def delete_category(
 @router.get("/{category_id}/subcategories", response_model=List[SubcategoryResponse])
 async def get_subcategories(
     category_id: UUID,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    """소 카테고리 목록 조회"""
+    """소 카테고리 목록 조회 (본인 카테고리의 소 카테고리만)"""
+    # Check if category belongs to user
+    cat_result = await db.execute(
+        select(Category).where(
+            Category.id == category_id,
+            Category.user_id == current_user.id
+        )
+    )
+    if not cat_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+
     result = await db.execute(
         select(Subcategory)
         .where(Subcategory.category_id == category_id)
@@ -99,12 +126,15 @@ async def get_subcategories(
 async def create_subcategory(
     subcategory_data: SubcategoryCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """소 카테고리 생성 (관리자 전용)"""
-    # Check if category exists
+    """소 카테고리 생성"""
+    # Check if category exists and belongs to user
     result = await db.execute(
-        select(Category).where(Category.id == subcategory_data.category_id)
+        select(Category).where(
+            Category.id == subcategory_data.category_id,
+            Category.user_id == current_user.id
+        )
     )
     if not result.scalar_one_or_none():
         raise HTTPException(
@@ -127,11 +157,17 @@ async def create_subcategory(
 async def delete_subcategory(
     subcategory_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """소 카테고리 삭제 (관리자 전용)"""
+    """소 카테고리 삭제"""
+    # Join with Category to check user ownership
     result = await db.execute(
-        select(Subcategory).where(Subcategory.id == subcategory_id)
+        select(Subcategory)
+        .join(Category)
+        .where(
+            Subcategory.id == subcategory_id,
+            Category.user_id == current_user.id
+        )
     )
     subcategory = result.scalar_one_or_none()
 
@@ -172,9 +208,14 @@ async def create_product(
     current_user: User = Depends(get_current_user)
 ):
     """제품 생성"""
-    # Check if subcategory exists
+    # Check if subcategory exists and belongs to user's category
     result = await db.execute(
-        select(Subcategory).where(Subcategory.id == product_data.subcategory_id)
+        select(Subcategory)
+        .join(Category)
+        .where(
+            Subcategory.id == product_data.subcategory_id,
+            Category.user_id == current_user.id
+        )
     )
     if not result.scalar_one_or_none():
         raise HTTPException(

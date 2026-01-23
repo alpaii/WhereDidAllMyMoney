@@ -130,7 +130,7 @@ export default function CategoriesPage() {
       categoryForm.reset();
     } catch (error) {
       console.error('Failed to create category:', error);
-      alert('카테고리 생성에 실패했습니다. 관리자 권한이 필요합니다.');
+      alert('카테고리 생성에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -142,7 +142,7 @@ export default function CategoriesPage() {
         await deleteCategory(id);
       } catch (error) {
         console.error('Failed to delete category:', error);
-        alert('카테고리 삭제에 실패했습니다. 관리자 권한이 필요합니다.');
+        alert('카테고리 삭제에 실패했습니다.');
       }
     }
   };
@@ -165,7 +165,7 @@ export default function CategoriesPage() {
       subcategoryForm.reset();
     } catch (error) {
       console.error('Failed to create subcategory:', error);
-      alert('서브카테고리 생성에 실패했습니다. 관리자 권한이 필요합니다.');
+      alert('서브카테고리 생성에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -177,7 +177,7 @@ export default function CategoriesPage() {
         await deleteSubcategory(id);
       } catch (error) {
         console.error('Failed to delete subcategory:', error);
-        alert('서브카테고리 삭제에 실패했습니다. 관리자 권한이 필요합니다.');
+        alert('서브카테고리 삭제에 실패했습니다.');
       }
     }
   };
