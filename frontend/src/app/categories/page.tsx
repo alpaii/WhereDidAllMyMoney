@@ -25,7 +25,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { DashboardLayout } from '@/components/layout';
 import { Card, CardContent, Button, Input, Modal } from '@/components/ui';
 import { useCategories } from '@/hooks/useCategories';
-import type { Category } from '@/types';
+import type { Category, Subcategory } from '@/types';
 
 const categorySchema = z.object({
   name: z.string().min(1, '카테고리 이름을 입력하세요'),
@@ -38,16 +38,68 @@ const subcategorySchema = z.object({
 type CategoryForm = z.infer<typeof categorySchema>;
 type SubcategoryForm = z.infer<typeof subcategorySchema>;
 
+function SortableSubcategoryItem({
+  subcategory,
+  onDeleteSubcategory,
+}: {
+  subcategory: Subcategory;
+  onDeleteSubcategory: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: subcategory.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between px-3 py-2 bg-white rounded-lg text-sm text-gray-700 shadow-sm"
+    >
+      <div className="flex items-center gap-2 flex-1">
+        <button
+          className="cursor-grab active:cursor-grabbing p-0.5 text-gray-400 hover:text-gray-600 touch-none"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={14} />
+        </button>
+        <span>{subcategory.name}</span>
+      </div>
+      <button
+        onClick={() => onDeleteSubcategory(subcategory.id)}
+        className="p-1 text-red-500 hover:text-red-700"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
 function SortableCategoryItem({
   category,
   onDeleteCategory,
   onAddSubcategory,
   onDeleteSubcategory,
+  onSubcategoryDragEnd,
+  subcategorySensors,
 }: {
   category: Category;
   onDeleteCategory: (id: string) => void;
   onAddSubcategory: (categoryId: string) => void;
   onDeleteSubcategory: (id: string) => void;
+  onSubcategoryDragEnd: (categoryId: string, event: DragEndEvent) => void;
+  subcategorySensors: ReturnType<typeof useSensors>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const hasSubcategories = category.subcategories && category.subcategories.length > 0;
@@ -119,22 +171,26 @@ function SortableCategoryItem({
       {isOpen && (
         <div className="bg-gray-50 border-t border-gray-200 p-4">
           {hasSubcategories ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {category.subcategories?.map((sub) => (
-                <div
-                  key={sub.id}
-                  className="flex items-center justify-between px-3 py-2 bg-white rounded-lg text-sm text-gray-700 shadow-sm"
-                >
-                  <span>{sub.name}</span>
-                  <button
-                    onClick={() => onDeleteSubcategory(sub.id)}
-                    className="p-1 text-red-500 hover:text-red-700"
-                  >
-                    <X size={14} />
-                  </button>
+            <DndContext
+              sensors={subcategorySensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => onSubcategoryDragEnd(category.id, event)}
+            >
+              <SortableContext
+                items={category.subcategories?.map((s) => s.id) || []}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex flex-col gap-2">
+                  {category.subcategories?.map((sub) => (
+                    <SortableSubcategoryItem
+                      key={sub.id}
+                      subcategory={sub}
+                      onDeleteSubcategory={onDeleteSubcategory}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           ) : (
             <p className="text-sm text-gray-500 text-center py-2">
               서브카테고리가 없습니다
@@ -155,6 +211,7 @@ export default function CategoriesPage() {
     createSubcategory,
     deleteSubcategory,
     updateCategoryOrder,
+    updateSubcategoryOrder,
   } = useCategories();
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -162,7 +219,14 @@ export default function CategoriesPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const sensors = useSensors(
+  const categorySensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const subcategorySensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -177,7 +241,7 @@ export default function CategoriesPage() {
     resolver: zodResolver(subcategorySchema),
   });
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleCategoryDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -194,6 +258,30 @@ export default function CategoriesPage() {
         await updateCategoryOrder(orderUpdate);
       } catch (error) {
         console.error('Failed to update category order:', error);
+      }
+    }
+  };
+
+  const handleSubcategoryDragEnd = async (categoryId: string, event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const category = categories.find((cat) => cat.id === categoryId);
+      if (!category?.subcategories) return;
+
+      const oldIndex = category.subcategories.findIndex((sub) => sub.id === active.id);
+      const newIndex = category.subcategories.findIndex((sub) => sub.id === over.id);
+
+      const newOrder = arrayMove(category.subcategories, oldIndex, newIndex);
+      const orderUpdate = newOrder.map((sub, index) => ({
+        id: sub.id,
+        sort_order: index,
+      }));
+
+      try {
+        await updateSubcategoryOrder(categoryId, orderUpdate);
+      } catch (error) {
+        console.error('Failed to update subcategory order:', error);
       }
     }
   };
@@ -291,9 +379,9 @@ export default function CategoriesPage() {
               </div>
             ) : (
               <DndContext
-                sensors={sensors}
+                sensors={categorySensors}
                 collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
+                onDragEnd={handleCategoryDragEnd}
               >
                 <SortableContext
                   items={categories.map((c) => c.id)}
@@ -307,6 +395,8 @@ export default function CategoriesPage() {
                         onDeleteCategory={handleDeleteCategory}
                         onAddSubcategory={openSubcategoryModal}
                         onDeleteSubcategory={handleDeleteSubcategory}
+                        onSubcategoryDragEnd={handleSubcategoryDragEnd}
+                        subcategorySensors={subcategorySensors}
                       />
                     ))}
                   </div>

@@ -56,21 +56,38 @@ export function useCategories() {
   };
 
   const updateCategoryOrder = async (orderedCategories: { id: string; sort_order: number }[]) => {
-    await api.put('/categories/order', { categories: orderedCategories });
-    // Update local state optimistically
+    // Update local state optimistically first - update sort_order values AND sort
     setCategories((prev) => {
-      const sorted = [...prev].sort((a, b) => {
-        const aOrder = orderedCategories.find(c => c.id === a.id)?.sort_order ?? a.sort_order;
-        const bOrder = orderedCategories.find(c => c.id === b.id)?.sort_order ?? b.sort_order;
-        return aOrder - bOrder;
+      const updated = prev.map((cat) => {
+        const newOrder = orderedCategories.find((c) => c.id === cat.id);
+        return newOrder ? { ...cat, sort_order: newOrder.sort_order } : cat;
       });
-      return sorted;
+      return [...updated].sort((a, b) => a.sort_order - b.sort_order);
     });
+    // Then call API
+    await api.put('/categories/order', { categories: orderedCategories });
   };
 
-  const updateSubcategoryOrder = async (orderedSubcategories: { id: string; sort_order: number }[]) => {
+  const updateSubcategoryOrder = async (
+    categoryId: string,
+    orderedSubcategories: { id: string; sort_order: number }[]
+  ) => {
+    // Update local state optimistically first - update sort_order values AND sort
+    setCategories((prev) =>
+      prev.map((cat) => {
+        if (cat.id !== categoryId || !cat.subcategories) return cat;
+        const updatedSubcategories = cat.subcategories.map((sub) => {
+          const newOrder = orderedSubcategories.find((s) => s.id === sub.id);
+          return newOrder ? { ...sub, sort_order: newOrder.sort_order } : sub;
+        });
+        const sortedSubcategories = [...updatedSubcategories].sort(
+          (a, b) => a.sort_order - b.sort_order
+        );
+        return { ...cat, subcategories: sortedSubcategories };
+      })
+    );
+    // Then call API
     await api.put('/categories/subcategories/order', { subcategories: orderedSubcategories });
-    await fetchCategories();
   };
 
   useEffect(() => {
