@@ -4,7 +4,24 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronDown, ChevronRight, Plus, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, X, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { DashboardLayout } from '@/components/layout';
 import { Card, CardContent, Button, Input, Modal } from '@/components/ui';
 import { useCategories } from '@/hooks/useCategories';
@@ -21,7 +38,7 @@ const subcategorySchema = z.object({
 type CategoryForm = z.infer<typeof categorySchema>;
 type SubcategoryForm = z.infer<typeof subcategorySchema>;
 
-function CategoryItem({
+function SortableCategoryItem({
   category,
   onDeleteCategory,
   onAddSubcategory,
@@ -35,21 +52,53 @@ function CategoryItem({
   const [isOpen, setIsOpen] = useState(false);
   const hasSubcategories = category.subcategories && category.subcategories.length > 0;
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-3 flex-1 text-left"
-        >
-          <span className="font-medium text-gray-800">{category.name}</span>
-          {hasSubcategories && (
-            <span className="text-sm text-gray-500">
-              ({category.subcategories?.length}개)
-            </span>
-          )}
-          {isOpen ? <ChevronDown size={20} className="text-gray-400" /> : <ChevronRight size={20} className="text-gray-400" />}
-        </button>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="border border-gray-200 rounded-lg overflow-hidden bg-white"
+    >
+      <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+        <div className="flex items-center gap-3 flex-1">
+          <button
+            className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 touch-none"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical size={20} />
+          </button>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-3 flex-1 text-left"
+          >
+            <span className="font-medium text-gray-800">{category.name}</span>
+            {hasSubcategories && (
+              <span className="text-sm text-gray-500">
+                ({category.subcategories?.length}개)
+              </span>
+            )}
+            {isOpen ? (
+              <ChevronDown size={20} className="text-gray-400" />
+            ) : (
+              <ChevronRight size={20} className="text-gray-400" />
+            )}
+          </button>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => onAddSubcategory(category.id)}
@@ -105,12 +154,20 @@ export default function CategoriesPage() {
     deleteCategory,
     createSubcategory,
     deleteSubcategory,
+    updateCategoryOrder,
   } = useCategories();
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const categoryForm = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
@@ -119,6 +176,27 @@ export default function CategoriesPage() {
   const subcategoryForm = useForm<SubcategoryForm>({
     resolver: zodResolver(subcategorySchema),
   });
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = categories.findIndex((cat) => cat.id === active.id);
+      const newIndex = categories.findIndex((cat) => cat.id === over.id);
+
+      const newOrder = arrayMove(categories, oldIndex, newIndex);
+      const orderUpdate = newOrder.map((cat, index) => ({
+        id: cat.id,
+        sort_order: index,
+      }));
+
+      try {
+        await updateCategoryOrder(orderUpdate);
+      } catch (error) {
+        console.error('Failed to update category order:', error);
+      }
+    }
+  };
 
   const handleCreateCategory = async (data: CategoryForm) => {
     try {
@@ -212,17 +290,28 @@ export default function CategoriesPage() {
                 등록된 카테고리가 없습니다
               </div>
             ) : (
-              <div className="space-y-3">
-                {categories.map((category) => (
-                  <CategoryItem
-                    key={category.id}
-                    category={category}
-                    onDeleteCategory={handleDeleteCategory}
-                    onAddSubcategory={openSubcategoryModal}
-                    onDeleteSubcategory={handleDeleteSubcategory}
-                  />
-                ))}
-              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={categories.map((c) => c.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {categories.map((category) => (
+                      <SortableCategoryItem
+                        key={category.id}
+                        category={category}
+                        onDeleteCategory={handleDeleteCategory}
+                        onAddSubcategory={openSubcategoryModal}
+                        onDeleteSubcategory={handleDeleteSubcategory}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </CardContent>
         </Card>

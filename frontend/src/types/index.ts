@@ -74,6 +74,7 @@ export interface Category {
   name: string;
   icon?: string;
   is_system: boolean;
+  sort_order: number;
   created_at: string;
   subcategories?: Subcategory[];
 }
@@ -82,6 +83,7 @@ export interface Subcategory {
   id: string;
   category_id: string;
   name: string;
+  sort_order: number;
   created_at: string;
   category?: Category;
 }

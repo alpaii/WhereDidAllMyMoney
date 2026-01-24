@@ -40,7 +40,7 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { logout, user } = useAuthStore();
-  const { sidebarCollapsed: isCollapsed, toggleSidebar: toggleCollapse } = useUIStore();
+  const { sidebarCollapsed: isCollapsed, toggleSidebar: toggleCollapse, hasHydrated } = useUIStore();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -79,7 +79,8 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 bg-white border-r border-gray-200 transition-all duration-300',
+          'fixed inset-y-0 left-0 z-40 bg-white border-r border-gray-200',
+          hasHydrated && 'transition-all duration-300',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           isCollapsed ? 'w-20' : 'w-64'
         )}

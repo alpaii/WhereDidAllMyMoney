@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
@@ -17,10 +17,21 @@ class CategoryCreate(CategoryBase):
 
 class CategoryResponse(CategoryBase):
     id: UUID
+    sort_order: int
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+# Category order update
+class CategoryOrderItem(BaseModel):
+    id: UUID
+    sort_order: int
+
+
+class CategoryOrderUpdate(BaseModel):
+    categories: List[CategoryOrderItem]
 
 
 # Subcategory
@@ -35,10 +46,20 @@ class SubcategoryCreate(SubcategoryBase):
 class SubcategoryResponse(SubcategoryBase):
     id: UUID
     category_id: UUID
+    sort_order: int
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class SubcategoryOrderItem(BaseModel):
+    id: UUID
+    sort_order: int
+
+
+class SubcategoryOrderUpdate(BaseModel):
+    subcategories: List[SubcategoryOrderItem]
 
 
 class CategoryWithSubcategories(CategoryResponse):

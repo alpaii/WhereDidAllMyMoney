@@ -55,6 +55,24 @@ export function useCategories() {
     await fetchCategories();
   };
 
+  const updateCategoryOrder = async (orderedCategories: { id: string; sort_order: number }[]) => {
+    await api.put('/categories/order', { categories: orderedCategories });
+    // Update local state optimistically
+    setCategories((prev) => {
+      const sorted = [...prev].sort((a, b) => {
+        const aOrder = orderedCategories.find(c => c.id === a.id)?.sort_order ?? a.sort_order;
+        const bOrder = orderedCategories.find(c => c.id === b.id)?.sort_order ?? b.sort_order;
+        return aOrder - bOrder;
+      });
+      return sorted;
+    });
+  };
+
+  const updateSubcategoryOrder = async (orderedSubcategories: { id: string; sort_order: number }[]) => {
+    await api.put('/categories/subcategories/order', { subcategories: orderedSubcategories });
+    await fetchCategories();
+  };
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
@@ -70,6 +88,8 @@ export function useCategories() {
     deleteCategory,
     createSubcategory,
     deleteSubcategory,
+    updateCategoryOrder,
+    updateSubcategoryOrder,
   };
 }
 

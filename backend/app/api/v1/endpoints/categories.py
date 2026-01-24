@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import List
 from uuid import UUID
@@ -10,7 +10,8 @@ from app.models.user import User
 from app.models.category import Category, Subcategory, Product
 from app.schemas.category import (
     CategoryCreate, CategoryResponse, CategoryWithSubcategories,
-    SubcategoryCreate, SubcategoryResponse,
+    CategoryOrderUpdate,
+    SubcategoryCreate, SubcategoryResponse, SubcategoryOrderUpdate,
     ProductCreate, ProductUpdate, ProductResponse
 )
 from app.core.deps import get_current_user
@@ -30,7 +31,7 @@ async def get_categories(
         select(Category)
         .where(Category.user_id == current_user.id)
         .options(selectinload(Category.subcategories))
-        .order_by(Category.name)
+        .order_by(Category.sort_order, Category.name)
     )
     return result.scalars().all()
 
@@ -55,10 +56,18 @@ async def create_category(
             detail="Category name already exists"
         )
 
+    # Get max sort_order for new category
+    max_order_result = await db.execute(
+        select(func.coalesce(func.max(Category.sort_order), -1))
+        .where(Category.user_id == current_user.id)
+    )
+    max_order = max_order_result.scalar()
+
     category = Category(
         user_id=current_user.id,
         name=category_data.name,
-        icon=category_data.icon
+        icon=category_data.icon,
+        sort_order=max_order + 1
     )
     db.add(category)
     await db.commit()
@@ -92,6 +101,28 @@ async def delete_category(
     await db.commit()
 
 
+@router.put("/order", status_code=status.HTTP_200_OK)
+async def update_category_order(
+    order_data: CategoryOrderUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """카테고리 순서 변경"""
+    for item in order_data.categories:
+        result = await db.execute(
+            select(Category).where(
+                Category.id == item.id,
+                Category.user_id == current_user.id
+            )
+        )
+        category = result.scalar_one_or_none()
+        if category:
+            category.sort_order = item.sort_order
+
+    await db.commit()
+    return {"message": "Order updated successfully"}
+
+
 # ==================== Subcategories ====================
 
 @router.get("/{category_id}/subcategories", response_model=List[SubcategoryResponse])
@@ -117,7 +148,7 @@ async def get_subcategories(
     result = await db.execute(
         select(Subcategory)
         .where(Subcategory.category_id == category_id)
-        .order_by(Subcategory.name)
+        .order_by(Subcategory.sort_order, Subcategory.name)
     )
     return result.scalars().all()
 
@@ -142,9 +173,17 @@ async def create_subcategory(
             detail="Category not found"
         )
 
+    # Get max sort_order for new subcategory
+    max_order_result = await db.execute(
+        select(func.coalesce(func.max(Subcategory.sort_order), -1))
+        .where(Subcategory.category_id == subcategory_data.category_id)
+    )
+    max_order = max_order_result.scalar()
+
     subcategory = Subcategory(
         category_id=subcategory_data.category_id,
-        name=subcategory_data.name
+        name=subcategory_data.name,
+        sort_order=max_order + 1
     )
     db.add(subcategory)
     await db.commit()
@@ -179,6 +218,31 @@ async def delete_subcategory(
 
     await db.delete(subcategory)
     await db.commit()
+
+
+@router.put("/subcategories/order", status_code=status.HTTP_200_OK)
+async def update_subcategory_order(
+    order_data: SubcategoryOrderUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """소 카테고리 순서 변경"""
+    for item in order_data.subcategories:
+        # Verify ownership through category
+        result = await db.execute(
+            select(Subcategory)
+            .join(Category)
+            .where(
+                Subcategory.id == item.id,
+                Category.user_id == current_user.id
+            )
+        )
+        subcategory = result.scalar_one_or_none()
+        if subcategory:
+            subcategory.sort_order = item.sort_order
+
+    await db.commit()
+    return {"message": "Order updated successfully"}
 
 
 # ==================== Products ====================

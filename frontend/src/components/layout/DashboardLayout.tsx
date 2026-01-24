@@ -16,20 +16,24 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, title, action }: DashboardLayoutProps) {
   const router = useRouter();
-  const { isAuthenticated, fetchUser, isLoading } = useAuthStore();
-  const { sidebarCollapsed } = useUIStore();
+  const { isAuthenticated, fetchUser, isLoading, _hasHydrated: authHydrated } = useAuthStore();
+  const { sidebarCollapsed, hasHydrated } = useUIStore();
 
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    // Only fetch user if auth has hydrated and user is not yet authenticated
+    if (authHydrated && !isAuthenticated) {
+      fetchUser();
+    }
+  }, [authHydrated, isAuthenticated, fetchUser]);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (authHydrated && !isLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [authHydrated, isAuthenticated, isLoading, router]);
 
-  if (isLoading) {
+  // Show loading only during initial hydration
+  if (!authHydrated || (isLoading && !isAuthenticated)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600" />
@@ -45,7 +49,8 @@ export default function DashboardLayout({ children, title, action }: DashboardLa
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
       <div className={cn(
-        'flex flex-col min-h-screen transition-all duration-300',
+        'flex flex-col min-h-screen',
+        hasHydrated && 'transition-all duration-300',
         sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
       )}>
         <Header title={title} action={action} />
