@@ -34,7 +34,7 @@ export default function LoginPage() {
     try {
       setError(null);
       await login(data);
-      router.push('/dashboard');
+      router.push('/expenses');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '로그인에 실패했습니다');

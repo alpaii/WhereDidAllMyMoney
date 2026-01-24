@@ -95,18 +95,18 @@ export default function AdminSidebar() {
             </button>
           </div>
 
-          {/* Back to user dashboard link */}
+          {/* Back to user page link */}
           <div className="p-4 border-b border-gray-700">
             <Link
-              href="/dashboard"
+              href="/expenses"
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors',
                 isCollapsed && 'justify-center'
               )}
-              title={isCollapsed ? '사용자 대시보드' : undefined}
+              title={isCollapsed ? '사용자 페이지' : undefined}
             >
               <ArrowLeft size={20} />
-              {!isCollapsed && <span>사용자 대시보드</span>}
+              {!isCollapsed && <span>사용자 페이지</span>}
             </Link>
           </div>
 

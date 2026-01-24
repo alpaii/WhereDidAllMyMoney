@@ -23,7 +23,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     } else if (!isLoading && isAuthenticated && user?.role !== 'admin') {
-      router.push('/dashboard');
+      router.push('/expenses');
     }
   }, [isAuthenticated, isLoading, user, router]);
 

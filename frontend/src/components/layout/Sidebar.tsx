@@ -92,13 +92,13 @@ export default function Sidebar() {
             isCollapsed ? 'justify-center' : 'justify-between'
           )}>
             {!isCollapsed && (
-              <Link href="/dashboard" className="flex items-center gap-2">
+              <Link href="/expenses" className="flex items-center gap-2">
                 <span className="text-2xl">💰</span>
                 <span className="font-bold text-lg text-gray-800">소비관리</span>
               </Link>
             )}
             {isCollapsed && (
-              <Link href="/dashboard">
+              <Link href="/expenses">
                 <span className="text-2xl">💰</span>
               </Link>
             )}
