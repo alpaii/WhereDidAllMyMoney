@@ -27,11 +27,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: '계좌 관리', href: '/accounts', icon: <Wallet size={20} /> },
   { label: '지출 내역', href: '/expenses', icon: <CreditCard size={20} /> },
   { label: '이체 내역', href: '/transfers', icon: <ArrowLeftRight size={20} /> },
-  { label: '카테고리', href: '/categories', icon: <Tag size={20} /> },
   { label: '상품 관리', href: '/products', icon: <Package size={20} /> },
+  { label: '카테고리 관리', href: '/categories', icon: <Tag size={20} /> },
+  { label: '계좌 관리', href: '/accounts', icon: <Wallet size={20} /> },
   { label: '통계', href: '/statistics', icon: <PieChart size={20} /> },
   { label: '설정', href: '/settings', icon: <Settings size={20} /> },
 ];
