@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronDown, ChevronRight, Plus, Trash2, X, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, X, GripVertical, Pencil } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -40,9 +40,11 @@ type SubcategoryForm = z.infer<typeof subcategorySchema>;
 
 function SortableSubcategoryItem({
   subcategory,
+  onEditSubcategory,
   onDeleteSubcategory,
 }: {
   subcategory: Subcategory;
+  onEditSubcategory: (subcategory: Subcategory) => void;
   onDeleteSubcategory: (id: string) => void;
 }) {
   const {
@@ -76,27 +78,41 @@ function SortableSubcategoryItem({
         </button>
         <span>{subcategory.name}</span>
       </div>
-      <button
-        onClick={() => onDeleteSubcategory(subcategory.id)}
-        className="p-1 text-red-500 hover:text-red-700"
-      >
-        <X size={14} />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onEditSubcategory(subcategory)}
+          className="p-1 text-gray-500 hover:text-gray-700"
+          title="이름 변경"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          onClick={() => onDeleteSubcategory(subcategory.id)}
+          className="p-1 text-red-500 hover:text-red-700"
+          title="삭제"
+        >
+          <X size={14} />
+        </button>
+      </div>
     </div>
   );
 }
 
 function SortableCategoryItem({
   category,
+  onEditCategory,
   onDeleteCategory,
   onAddSubcategory,
+  onEditSubcategory,
   onDeleteSubcategory,
   onSubcategoryDragEnd,
   subcategorySensors,
 }: {
   category: Category;
+  onEditCategory: (category: Category) => void;
   onDeleteCategory: (id: string) => void;
   onAddSubcategory: (categoryId: string) => void;
+  onEditSubcategory: (subcategory: Subcategory) => void;
   onDeleteSubcategory: (id: string) => void;
   onSubcategoryDragEnd: (categoryId: string, event: DragEndEvent) => void;
   subcategorySensors: ReturnType<typeof useSensors>;
@@ -139,11 +155,6 @@ function SortableCategoryItem({
             className="flex items-center gap-3 flex-1 text-left"
           >
             <span className="font-medium text-gray-800">{category.name}</span>
-            {hasSubcategories && (
-              <span className="text-sm text-gray-500">
-                ({category.subcategories?.length}개)
-              </span>
-            )}
             {isOpen ? (
               <ChevronDown size={20} className="text-gray-400" />
             ) : (
@@ -151,7 +162,14 @@ function SortableCategoryItem({
             )}
           </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onEditCategory(category)}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            title="이름 변경"
+          >
+            <Pencil size={18} />
+          </button>
           <button
             onClick={() => onAddSubcategory(category.id)}
             className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
@@ -185,6 +203,7 @@ function SortableCategoryItem({
                     <SortableSubcategoryItem
                       key={sub.id}
                       subcategory={sub}
+                      onEditSubcategory={onEditSubcategory}
                       onDeleteSubcategory={onDeleteSubcategory}
                     />
                   ))}
@@ -207,8 +226,10 @@ export default function CategoriesPage() {
     categories,
     isLoading,
     createCategory,
+    updateCategory,
     deleteCategory,
     createSubcategory,
+    updateSubcategory,
     deleteSubcategory,
     updateCategoryOrder,
     updateSubcategoryOrder,
@@ -217,6 +238,8 @@ export default function CategoriesPage() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categorySensors = useSensors(
@@ -286,20 +309,29 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleCreateCategory = async (data: CategoryForm) => {
+  const handleSaveCategory = async (data: CategoryForm) => {
     try {
       setIsSubmitting(true);
-      await createCategory({
-        name: data.name,
-      });
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, { name: data.name });
+      } else {
+        await createCategory({ name: data.name });
+      }
       setIsCategoryModalOpen(false);
+      setEditingCategory(null);
       categoryForm.reset();
     } catch (error) {
-      console.error('Failed to create category:', error);
-      alert('카테고리 생성에 실패했습니다.');
+      console.error('Failed to save category:', error);
+      alert(editingCategory ? '카테고리 수정에 실패했습니다.' : '카테고리 생성에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const openEditCategoryModal = (category: Category) => {
+    setEditingCategory(category);
+    categoryForm.reset({ name: category.name });
+    setIsCategoryModalOpen(true);
   };
 
   const handleDeleteCategory = async (id: string) => {
@@ -315,23 +347,34 @@ export default function CategoriesPage() {
 
   const openSubcategoryModal = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
+    setEditingSubcategory(null);
     subcategoryForm.reset();
     setIsSubcategoryModalOpen(true);
   };
 
-  const handleCreateSubcategory = async (data: SubcategoryForm) => {
-    if (!selectedCategoryId) return;
+  const openEditSubcategoryModal = (subcategory: Subcategory) => {
+    setEditingSubcategory(subcategory);
+    subcategoryForm.reset({ name: subcategory.name });
+    setIsSubcategoryModalOpen(true);
+  };
+
+  const handleSaveSubcategory = async (data: SubcategoryForm) => {
     try {
       setIsSubmitting(true);
-      await createSubcategory({
-        category_id: selectedCategoryId,
-        name: data.name,
-      });
+      if (editingSubcategory) {
+        await updateSubcategory(editingSubcategory.id, { name: data.name });
+      } else if (selectedCategoryId) {
+        await createSubcategory({
+          category_id: selectedCategoryId,
+          name: data.name,
+        });
+      }
       setIsSubcategoryModalOpen(false);
+      setEditingSubcategory(null);
       subcategoryForm.reset();
     } catch (error) {
-      console.error('Failed to create subcategory:', error);
-      alert('서브카테고리 생성에 실패했습니다.');
+      console.error('Failed to save subcategory:', error);
+      alert(editingSubcategory ? '서브카테고리 수정에 실패했습니다.' : '서브카테고리 생성에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -354,6 +397,7 @@ export default function CategoriesPage() {
       action={
         <Button
           onClick={() => {
+            setEditingCategory(null);
             categoryForm.reset({ name: '' });
             setIsCategoryModalOpen(true);
           }}
@@ -392,8 +436,10 @@ export default function CategoriesPage() {
                       <SortableCategoryItem
                         key={category.id}
                         category={category}
+                        onEditCategory={openEditCategoryModal}
                         onDeleteCategory={handleDeleteCategory}
                         onAddSubcategory={openSubcategoryModal}
+                        onEditSubcategory={openEditSubcategoryModal}
                         onDeleteSubcategory={handleDeleteSubcategory}
                         onSubcategoryDragEnd={handleSubcategoryDragEnd}
                         subcategorySensors={subcategorySensors}
@@ -409,10 +455,13 @@ export default function CategoriesPage() {
         {/* Category Modal */}
         <Modal
           isOpen={isCategoryModalOpen}
-          onClose={() => setIsCategoryModalOpen(false)}
-          title="카테고리 추가"
+          onClose={() => {
+            setIsCategoryModalOpen(false);
+            setEditingCategory(null);
+          }}
+          title={editingCategory ? '카테고리 수정' : '카테고리 추가'}
         >
-          <form onSubmit={categoryForm.handleSubmit(handleCreateCategory)} className="space-y-4">
+          <form onSubmit={categoryForm.handleSubmit(handleSaveCategory)} className="space-y-4">
             <Input
               id="name"
               label="카테고리 이름"
@@ -424,12 +473,15 @@ export default function CategoriesPage() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setIsCategoryModalOpen(false)}
+                onClick={() => {
+                  setIsCategoryModalOpen(false);
+                  setEditingCategory(null);
+                }}
               >
                 취소
               </Button>
               <Button type="submit" isLoading={isSubmitting}>
-                추가
+                {editingCategory ? '수정' : '추가'}
               </Button>
             </div>
           </form>
@@ -438,10 +490,13 @@ export default function CategoriesPage() {
         {/* Subcategory Modal */}
         <Modal
           isOpen={isSubcategoryModalOpen}
-          onClose={() => setIsSubcategoryModalOpen(false)}
-          title="서브카테고리 추가"
+          onClose={() => {
+            setIsSubcategoryModalOpen(false);
+            setEditingSubcategory(null);
+          }}
+          title={editingSubcategory ? '서브카테고리 수정' : '서브카테고리 추가'}
         >
-          <form onSubmit={subcategoryForm.handleSubmit(handleCreateSubcategory)} className="space-y-4">
+          <form onSubmit={subcategoryForm.handleSubmit(handleSaveSubcategory)} className="space-y-4">
             <Input
               id="subcategory-name"
               label="서브카테고리 이름"
@@ -453,12 +508,15 @@ export default function CategoriesPage() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setIsSubcategoryModalOpen(false)}
+                onClick={() => {
+                  setIsSubcategoryModalOpen(false);
+                  setEditingSubcategory(null);
+                }}
               >
                 취소
               </Button>
               <Button type="submit" isLoading={isSubmitting}>
-                추가
+                {editingSubcategory ? '수정' : '추가'}
               </Button>
             </div>
           </form>

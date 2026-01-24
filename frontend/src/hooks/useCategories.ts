@@ -39,6 +39,14 @@ export function useCategories() {
     return response.data;
   };
 
+  const updateCategory = async (id: string, data: { name: string }) => {
+    const response = await api.patch<Category>(`/categories/${id}`, data);
+    setCategories((prev) =>
+      prev.map((cat) => (cat.id === id ? { ...cat, name: response.data.name } : cat))
+    );
+    return response.data;
+  };
+
   const deleteCategory = async (id: string) => {
     await api.delete(`/categories/${id}`);
     setCategories((prev) => prev.filter((cat) => cat.id !== id));
@@ -47,6 +55,19 @@ export function useCategories() {
   const createSubcategory = async (data: SubcategoryCreateData) => {
     const response = await api.post<Subcategory>('/categories/subcategories', data);
     await fetchCategories();
+    return response.data;
+  };
+
+  const updateSubcategory = async (id: string, data: { name: string }) => {
+    const response = await api.patch<Subcategory>(`/categories/subcategories/${id}`, data);
+    setCategories((prev) =>
+      prev.map((cat) => ({
+        ...cat,
+        subcategories: cat.subcategories?.map((sub) =>
+          sub.id === id ? { ...sub, name: response.data.name } : sub
+        ),
+      }))
+    );
     return response.data;
   };
 
@@ -102,8 +123,10 @@ export function useCategories() {
     error,
     fetchCategories,
     createCategory,
+    updateCategory,
     deleteCategory,
     createSubcategory,
+    updateSubcategory,
     deleteSubcategory,
     updateCategoryOrder,
     updateSubcategoryOrder,

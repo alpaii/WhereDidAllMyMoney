@@ -9,9 +9,9 @@ from app.db.database import get_db
 from app.models.user import User
 from app.models.category import Category, Subcategory, Product
 from app.schemas.category import (
-    CategoryCreate, CategoryResponse, CategoryWithSubcategories,
+    CategoryCreate, CategoryUpdate, CategoryResponse, CategoryWithSubcategories,
     CategoryOrderUpdate,
-    SubcategoryCreate, SubcategoryResponse, SubcategoryOrderUpdate,
+    SubcategoryCreate, SubcategoryUpdate, SubcategoryResponse, SubcategoryOrderUpdate,
     ProductCreate, ProductUpdate, ProductResponse
 )
 from app.core.deps import get_current_user
@@ -70,6 +70,52 @@ async def create_category(
         sort_order=max_order + 1
     )
     db.add(category)
+    await db.commit()
+    await db.refresh(category)
+
+    return category
+
+
+@router.patch("/{category_id}", response_model=CategoryResponse)
+async def update_category(
+    category_id: UUID,
+    category_data: CategoryUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """카테고리 수정"""
+    result = await db.execute(
+        select(Category).where(
+            Category.id == category_id,
+            Category.user_id == current_user.id
+        )
+    )
+    category = result.scalar_one_or_none()
+
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+
+    # Check if new name already exists
+    if category_data.name and category_data.name != category.name:
+        existing = await db.execute(
+            select(Category).where(
+                Category.user_id == current_user.id,
+                Category.name == category_data.name
+            )
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Category name already exists"
+            )
+
+    update_data = category_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(category, field, value)
+
     await db.commit()
     await db.refresh(category)
 
@@ -186,6 +232,41 @@ async def create_subcategory(
         sort_order=max_order + 1
     )
     db.add(subcategory)
+    await db.commit()
+    await db.refresh(subcategory)
+
+    return subcategory
+
+
+@router.patch("/subcategories/{subcategory_id}", response_model=SubcategoryResponse)
+async def update_subcategory(
+    subcategory_id: UUID,
+    subcategory_data: SubcategoryUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """소 카테고리 수정"""
+    # Join with Category to check user ownership
+    result = await db.execute(
+        select(Subcategory)
+        .join(Category)
+        .where(
+            Subcategory.id == subcategory_id,
+            Category.user_id == current_user.id
+        )
+    )
+    subcategory = result.scalar_one_or_none()
+
+    if not subcategory:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subcategory not found"
+        )
+
+    update_data = subcategory_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(subcategory, field, value)
+
     await db.commit()
     await db.refresh(subcategory)
 

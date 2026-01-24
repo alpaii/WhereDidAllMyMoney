@@ -15,6 +15,10 @@ class CategoryCreate(CategoryBase):
     pass
 
 
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+
+
 class CategoryResponse(CategoryBase):
     id: UUID
     sort_order: int
@@ -41,6 +45,10 @@ class SubcategoryBase(BaseModel):
 
 class SubcategoryCreate(SubcategoryBase):
     category_id: UUID
+
+
+class SubcategoryUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
 
 
 class SubcategoryResponse(SubcategoryBase):
