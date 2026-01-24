@@ -42,6 +42,19 @@ export function useAccounts() {
     setAccounts((prev) => prev.filter((account) => account.id !== id));
   };
 
+  const updateAccountOrder = async (orderedAccounts: { id: string; sort_order: number }[]) => {
+    // Update local state optimistically first - update sort_order values AND sort
+    setAccounts((prev) => {
+      const updated = prev.map((acc) => {
+        const newOrder = orderedAccounts.find((a) => a.id === acc.id);
+        return newOrder ? { ...acc, sort_order: newOrder.sort_order } : acc;
+      });
+      return [...updated].sort((a, b) => a.sort_order - b.sort_order);
+    });
+    // Then call API
+    await api.put('/accounts/order', { accounts: orderedAccounts });
+  };
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
@@ -56,5 +69,6 @@ export function useAccounts() {
     createAccount,
     updateAccount,
     deleteAccount,
+    updateAccountOrder,
   };
 }

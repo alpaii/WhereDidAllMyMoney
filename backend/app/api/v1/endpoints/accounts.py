@@ -9,7 +9,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.models.account import Account, AccountType
 from app.schemas.account import (
-    AccountCreate, AccountUpdate, AccountResponse, AccountBalanceSummary
+    AccountCreate, AccountUpdate, AccountResponse, AccountBalanceSummary, AccountOrderUpdate
 )
 from app.core.deps import get_current_user
 
@@ -25,7 +25,7 @@ async def get_accounts(
     result = await db.execute(
         select(Account)
         .where(Account.user_id == current_user.id)
-        .order_by(Account.created_at.desc())
+        .order_by(Account.sort_order, Account.name)
     )
     return result.scalars().all()
 
@@ -68,13 +68,21 @@ async def create_account(
         for acc in result.scalars():
             acc.is_primary = False
 
+    # Get max sort_order for new account
+    max_order_result = await db.execute(
+        select(func.coalesce(func.max(Account.sort_order), -1))
+        .where(Account.user_id == current_user.id)
+    )
+    max_order = max_order_result.scalar()
+
     account = Account(
         user_id=current_user.id,
         name=account_data.name,
         account_type=account_data.account_type,
         balance=account_data.balance,
         is_primary=account_data.is_primary,
-        description=account_data.description
+        description=account_data.description,
+        sort_order=max_order + 1
     )
     db.add(account)
     await db.commit()
@@ -175,3 +183,25 @@ async def delete_account(
 
     await db.delete(account)
     await db.commit()
+
+
+@router.put("/order", status_code=status.HTTP_200_OK)
+async def update_account_order(
+    order_data: AccountOrderUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """계좌 순서 변경"""
+    for item in order_data.accounts:
+        result = await db.execute(
+            select(Account).where(
+                Account.id == item.id,
+                Account.user_id == current_user.id
+            )
+        )
+        account = result.scalar_one_or_none()
+        if account:
+            account.sort_order = item.sort_order
+
+    await db.commit()
+    return {"message": "Order updated successfully"}

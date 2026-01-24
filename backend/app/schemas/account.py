@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
@@ -37,11 +37,22 @@ class AccountResponse(BaseModel):
     balance: Decimal
     is_primary: bool
     description: Optional[str] = None
+    sort_order: int
     created_at: datetime
     updated_at: Optional[datetime]
 
     class Config:
         from_attributes = True
+
+
+# Order
+class AccountOrderItem(BaseModel):
+    id: UUID
+    sort_order: int
+
+
+class AccountOrderUpdate(BaseModel):
+    accounts: List[AccountOrderItem]
 
 
 class AccountBalanceSummary(BaseModel):

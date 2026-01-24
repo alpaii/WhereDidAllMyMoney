@@ -4,13 +4,28 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Button,
   Input,
   Select,
@@ -36,11 +51,90 @@ const accountTypeOptions = [
   { value: 'prepaid', label: '선불/포인트' },
 ];
 
+function SortableAccountItem({
+  account,
+  onEdit,
+  onDelete,
+}: {
+  account: Account;
+  onEdit: (account: Account) => void;
+  onDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: account.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-lg gap-4"
+    >
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 touch-none"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={20} />
+        </button>
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-gray-800">{account.name}</p>
+            <Badge className={getAccountTypeColor(account.account_type)}>
+              {getAccountTypeLabel(account.account_type)}
+            </Badge>
+          </div>
+          {account.description && (
+            <p className="text-sm text-gray-500 mt-1">{account.description}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center justify-between sm:justify-end gap-4">
+        <p className={`text-xl font-bold ${Number(account.balance) < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+          {formatCurrency(Number(account.balance))}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onEdit(account)}
+            className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg"
+          >
+            <Pencil size={18} />
+          </button>
+          <button
+            onClick={() => onDelete(account.id)}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+          >
+            <Trash2 size={18} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AccountsPage() {
-  const { accounts, isLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
+  const { accounts, isLoading, createAccount, updateAccount, deleteAccount, updateAccountOrder } = useAccounts();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const {
     register,
@@ -56,6 +150,26 @@ export default function AccountsPage() {
       description: '',
     },
   });
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = accounts.findIndex((acc) => acc.id === active.id);
+      const newIndex = accounts.findIndex((acc) => acc.id === over.id);
+      const newAccounts = arrayMove(accounts, oldIndex, newIndex);
+      const orderUpdate = newAccounts.map((acc, index) => ({
+        id: acc.id,
+        sort_order: index,
+      }));
+
+      try {
+        await updateAccountOrder(orderUpdate);
+      } catch (error) {
+        console.error('Failed to update account order:', error);
+      }
+    }
+  };
 
   const openCreateModal = () => {
     setEditingAccount(null);
@@ -149,47 +263,27 @@ export default function AccountsPage() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {accounts.map((account) => (
-                  <div
-                    key={account.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-lg gap-4"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-gray-800">{account.name}</p>
-                          <Badge className={getAccountTypeColor(account.account_type)}>
-                            {getAccountTypeLabel(account.account_type)}
-                          </Badge>
-                        </div>
-                        {account.description && (
-                          <p className="text-sm text-gray-500 mt-1">{account.description}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-4">
-                      <p className={`text-xl font-bold ${Number(account.balance) < 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                        {formatCurrency(Number(account.balance))}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openEditModal(account)}
-                          className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(account.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={accounts.map((a) => a.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-4">
+                    {accounts.map((account) => (
+                      <SortableAccountItem
+                        key={account.id}
+                        account={account}
+                        onEdit={openEditModal}
+                        onDelete={handleDelete}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
           </CardContent>
         </Card>
