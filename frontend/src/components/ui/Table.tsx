@@ -19,7 +19,7 @@ export function Table({ children, className }: TableProps) {
 }
 
 export function TableHeader({ children, className }: TableProps) {
-  return <thead className={cn('bg-gray-50', className)}>{children}</thead>;
+  return <thead className={cn('border-b-2 border-gray-200', className)}>{children}</thead>;
 }
 
 export function TableBody({ children, className }: TableProps) {
