@@ -24,7 +24,7 @@ import {
 } from '@/components/ui';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useCategories, useSubcategories } from '@/hooks/useCategories';
+import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency, formatDateTime, toSeoulDateTimeLocal, getSeoulNow } from '@/lib/utils';
 import type { Expense } from '@/types';
 
@@ -47,12 +47,34 @@ export default function ExpensesPage() {
   const { accounts } = useAccounts();
   const { categories } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const { subcategories } = useSubcategories(selectedCategoryId);
+
+  // categories에서 직접 서브카테고리 가져오기 (API 호출 없이 동기적으로)
+  const selectedCategoryData = categories.find(c => c.id === selectedCategoryId);
+  const subcategories = selectedCategoryData?.subcategories || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [lastSelectedAccountId, setLastSelectedAccountId] = useState<string | null>(null);
+
+  // localStorage에서 마지막 선택값 불러오기
+  const [lastSelectedAccountId, setLastSelectedAccountId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastSelectedAccountId');
+    }
+    return null;
+  });
+  const [lastSelectedCategoryId, setLastSelectedCategoryId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastSelectedCategoryId');
+    }
+    return null;
+  });
+  const [lastSelectedSubcategoryId, setLastSelectedSubcategoryId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastSelectedSubcategoryId');
+    }
+    return null;
+  });
 
   const {
     register,
@@ -77,9 +99,12 @@ export default function ExpensesPage() {
   useEffect(() => {
     if (watchCategoryId && watchCategoryId !== selectedCategoryId) {
       setSelectedCategoryId(watchCategoryId);
-      setValue('subcategory_id', '');
+      // 새 카테고리의 첫 번째 서브카테고리를 선택
+      const selectedCategory = categories.find(c => c.id === watchCategoryId);
+      const firstSubcategoryId = selectedCategory?.subcategories?.[0]?.id || '';
+      setValue('subcategory_id', firstSubcategoryId);
     }
-  }, [watchCategoryId, selectedCategoryId, setValue]);
+  }, [watchCategoryId, selectedCategoryId, setValue, categories]);
 
   // 금액 입력 시 천단위 콤마 자동 적용
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,12 +122,27 @@ export default function ExpensesPage() {
 
   const openCreateModal = () => {
     setEditingExpense(null);
-    setSelectedCategoryId(null);
     const defaultAccountId = lastSelectedAccountId || accounts[0]?.id || '';
+    const defaultCategoryId = lastSelectedCategoryId || categories[0]?.id || '';
+    setSelectedCategoryId(defaultCategoryId);
+
+    // 서브카테고리는 선택된 카테고리의 서브카테고리 목록에서 찾아야 함
+    const selectedCategory = categories.find(c => c.id === defaultCategoryId);
+    const categorySubcategories = selectedCategory?.subcategories || [];
+
+    // 저장된 서브카테고리가 현재 카테고리에 존재하는지 확인
+    let defaultSubcategoryId = categorySubcategories[0]?.id || '';
+    if (lastSelectedSubcategoryId) {
+      const subcategoryExists = categorySubcategories.some(sub => sub.id === lastSelectedSubcategoryId);
+      if (subcategoryExists) {
+        defaultSubcategoryId = lastSelectedSubcategoryId;
+      }
+    }
+
     reset({
       account_id: defaultAccountId,
-      category_id: '',
-      subcategory_id: '',
+      category_id: defaultCategoryId,
+      subcategory_id: defaultSubcategoryId,
       amount: '10,000',
       memo: '',
       purchase_url: '',
@@ -151,7 +191,13 @@ export default function ExpensesPage() {
       } else {
         await createExpense(expenseData);
       }
+      // localStorage에 마지막 선택값 저장
       setLastSelectedAccountId(data.account_id);
+      localStorage.setItem('lastSelectedAccountId', data.account_id);
+      setLastSelectedCategoryId(data.category_id);
+      localStorage.setItem('lastSelectedCategoryId', data.category_id);
+      setLastSelectedSubcategoryId(data.subcategory_id);
+      localStorage.setItem('lastSelectedSubcategoryId', data.subcategory_id);
       handleClose();
       fetchExpenses({ page, size: 10 });
     } catch (error) {
@@ -173,15 +219,9 @@ export default function ExpensesPage() {
 
   const accountOptions = accounts.map((acc) => ({ value: acc.id, label: acc.name }));
 
-  const categoryOptions = [
-    { value: '', label: '카테고리 선택' },
-    ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
-  ];
+  const categoryOptions = categories.map((cat) => ({ value: cat.id, label: cat.name }));
 
-  const subcategoryOptions = [
-    { value: '', label: '서브카테고리 선택' },
-    ...subcategories.map((sub) => ({ value: sub.id, label: sub.name })),
-  ];
+  const subcategoryOptions = subcategories.map((sub) => ({ value: sub.id, label: sub.name }));
 
   return (
     <DashboardLayout
