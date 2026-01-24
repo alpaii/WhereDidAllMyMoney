@@ -287,7 +287,7 @@ export default function ExpensesPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(expense.id)}
-                          className="p-1 text-gray-500 hover:text-red-600"
+                          className="p-1 text-red-500 hover:text-red-700"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -367,7 +367,7 @@ export default function ExpensesPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(expense.id)}
-                            className="p-1 text-gray-500 hover:text-red-600"
+                            className="p-1 text-red-500 hover:text-red-700"
                           >
                             <Trash2 size={16} />
                           </button>
