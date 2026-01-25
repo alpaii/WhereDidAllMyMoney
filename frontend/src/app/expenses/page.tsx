@@ -267,7 +267,7 @@ export default function ExpensesPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-bold ${Number(expense.amount) < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                      <p className={`font-bold font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : 'text-gray-800'}`}>
                         {formatCurrency(Number(expense.amount))}
                       </p>
                       <div className="flex items-center gap-1 mt-2">
@@ -346,7 +346,7 @@ export default function ExpensesPage() {
                       </TableCell>
                       <TableCell>{expense.account_name}</TableCell>
                       <TableCell className="max-w-xs truncate">{expense.memo || '-'}</TableCell>
-                      <TableCell className={`text-right font-medium ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
+                      <TableCell className={`text-right font-medium font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
                         {formatCurrency(Number(expense.amount))}
                       </TableCell>
                       <TableCell className="text-right">

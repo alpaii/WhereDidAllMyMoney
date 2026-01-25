@@ -193,7 +193,7 @@ export default function TransfersPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-800">
+                      <p className="font-bold font-mono text-gray-800">
                         {formatCurrency(Number(transfer.amount))}
                       </p>
                       <div className="flex items-center gap-1 mt-2">
@@ -256,7 +256,7 @@ export default function TransfersPage() {
                       <TableCell>{accounts.find(a => a.id === transfer.from_account_id)?.name || '알 수 없음'}</TableCell>
                       <TableCell>{accounts.find(a => a.id === transfer.to_account_id)?.name || '알 수 없음'}</TableCell>
                       <TableCell className="max-w-xs truncate">{transfer.memo || '-'}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium font-mono">
                         {formatCurrency(Number(transfer.amount))}
                       </TableCell>
                       <TableCell className="text-right">

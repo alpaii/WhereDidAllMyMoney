@@ -210,7 +210,7 @@ export default function ProductsPage() {
                           {getSubcategoryName(product.subcategory_id)}
                         </p>
                         {product.default_price && (
-                          <p className="text-sm text-primary-600 font-medium">
+                          <p className="text-sm text-primary-600 font-medium font-mono">
                             {formatCurrency(Number(product.default_price))}
                           </p>
                         )}
@@ -273,7 +273,7 @@ export default function ProductsPage() {
                     <TableRow key={product.id}>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{getSubcategoryName(product.subcategory_id)}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-mono">
                         {product.default_price
                           ? formatCurrency(Number(product.default_price))
                           : '-'}
