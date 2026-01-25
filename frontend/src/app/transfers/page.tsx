@@ -212,8 +212,8 @@ export default function TransfersPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-gray-500">
-                    {formatDateTime(transfer.transferred_at)}
+                  <div className="mt-2 text-sm">
+                    <span className="font-mono text-[rgb(161,25,25)]">{formatDateTime(transfer.transferred_at)}</span>
                     {transfer.memo && <span className="ml-2">· {transfer.memo}</span>}
                   </div>
                 </CardContent>
@@ -252,7 +252,7 @@ export default function TransfersPage() {
                 ) : (
                   transfers.map((transfer) => (
                     <TableRow key={transfer.id}>
-                      <TableCell>{formatDateTime(transfer.transferred_at)}</TableCell>
+                      <TableCell><span className="font-mono text-xs text-[rgb(161,25,25)]">{formatDateTime(transfer.transferred_at)}</span></TableCell>
                       <TableCell>{accounts.find(a => a.id === transfer.from_account_id)?.name || '알 수 없음'}</TableCell>
                       <TableCell>{accounts.find(a => a.id === transfer.to_account_id)?.name || '알 수 없음'}</TableCell>
                       <TableCell className="max-w-xs truncate">{transfer.memo || '-'}</TableCell>

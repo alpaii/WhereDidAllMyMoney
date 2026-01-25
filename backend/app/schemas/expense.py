@@ -7,7 +7,7 @@ from decimal import Decimal
 
 # Base
 class ExpenseBase(BaseModel):
-    amount: Decimal = Field(..., gt=0)
+    amount: Decimal
     memo: Optional[str] = None
     purchase_url: Optional[str] = Field(None, max_length=2048)
     expense_at: datetime
@@ -27,7 +27,7 @@ class ExpenseUpdate(BaseModel):
     category_id: Optional[UUID] = None
     subcategory_id: Optional[UUID] = None
     product_id: Optional[UUID] = None
-    amount: Optional[Decimal] = Field(None, gt=0)
+    amount: Optional[Decimal] = None
     memo: Optional[str] = None
     purchase_url: Optional[str] = Field(None, max_length=2048)
     expense_at: Optional[datetime] = None

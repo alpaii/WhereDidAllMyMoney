@@ -23,7 +23,7 @@ export function formatDate(dateString: string, formatStr: string = 'yyyy-MM-dd')
 export function formatDateTime(dateString: string): string {
   const date = parseISO(dateString);
   const seoulTime = toZonedTime(date, 'Asia/Seoul');
-  return format(seoulTime, 'yyyy-MM-dd HH시', { locale: ko });
+  return format(seoulTime, "yyyy년 MM월 dd일 ' ('E') ' a h시", { locale: ko });
 }
 
 // ISO string을 서울 시간대의 datetime-local input 형식으로 변환

@@ -89,11 +89,13 @@ export default function ExpensesPage() {
 
   const watchCategoryId = watch('category_id');
 
-  // 천단위 콤마 포맷 함수
+  // 천단위 콤마 포맷 함수 (음수 허용)
   const formatAmountWithComma = (value: string) => {
+    const isNegative = value.startsWith('-');
     const numericValue = value.replace(/[^0-9]/g, '');
-    if (!numericValue) return '';
-    return Number(numericValue).toLocaleString('ko-KR');
+    if (!numericValue) return isNegative ? '-' : '';
+    const formatted = Number(numericValue).toLocaleString('ko-KR');
+    return isNegative ? `-${formatted}` : formatted;
   };
 
   useEffect(() => {
@@ -143,7 +145,7 @@ export default function ExpensesPage() {
       account_id: defaultAccountId,
       category_id: defaultCategoryId,
       subcategory_id: defaultSubcategoryId,
-      amount: '10,000',
+      amount: '',
       memo: '',
       purchase_url: '',
       expense_at: getSeoulNow(),
@@ -258,15 +260,15 @@ export default function ExpensesPage() {
                             <span className="text-gray-500"> &gt; {expense.subcategory_name}</span>
                           )}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-[rgb(161,25,25)] font-mono">
                           {formatDateTime(expense.expense_at)}
                         </p>
                         <p className="text-sm text-gray-500">{expense.account_name}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-800">
-                        -{formatCurrency(Number(expense.amount))}
+                      <p className={`font-bold ${Number(expense.amount) < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                        {formatCurrency(Number(expense.amount))}
                       </p>
                       <div className="flex items-center gap-1 mt-2">
                         {expense.purchase_url && (
@@ -335,7 +337,7 @@ export default function ExpensesPage() {
                 ) : (
                   expenses.map((expense) => (
                     <TableRow key={expense.id}>
-                      <TableCell>{formatDateTime(expense.expense_at)}</TableCell>
+                      <TableCell><span className="font-mono text-xs text-[rgb(161,25,25)]">{formatDateTime(expense.expense_at)}</span></TableCell>
                       <TableCell>
                         {expense.category_name || '미분류'}
                         {expense.subcategory_name && (
@@ -344,8 +346,8 @@ export default function ExpensesPage() {
                       </TableCell>
                       <TableCell>{expense.account_name}</TableCell>
                       <TableCell className="max-w-xs truncate">{expense.memo || '-'}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        -{formatCurrency(Number(expense.amount))}
+                      <TableCell className={`text-right font-medium ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
+                        {formatCurrency(Number(expense.amount))}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
