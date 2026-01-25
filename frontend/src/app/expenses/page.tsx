@@ -234,7 +234,7 @@ export default function ExpensesPage() {
         </Button>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-1">
         {/* Expense list - Mobile */}
         <div className="lg:hidden space-y-4">
           {isLoading ? (

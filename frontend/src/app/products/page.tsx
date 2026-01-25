@@ -185,7 +185,7 @@ export default function ProductsPage() {
         </Button>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-1">
         {/* Product list - Mobile */}
         <div className="lg:hidden space-y-4">
           {isLoading ? (

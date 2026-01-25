@@ -165,7 +165,7 @@ export default function TransfersPage() {
         </Button>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-1">
         {/* Transfer list - Mobile */}
         <div className="block lg:hidden space-y-4">
           {isLoading ? (
