@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, Check } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -41,6 +41,7 @@ const accountSchema = z.object({
   account_type: z.enum(['bank', 'credit_card', 'prepaid']),
   balance: z.string(),
   description: z.string().optional(),
+  badge_color: z.string().optional(),
 });
 
 type AccountForm = z.infer<typeof accountSchema>;
@@ -49,6 +50,20 @@ const accountTypeOptions = [
   { value: 'bank', label: '은행계좌' },
   { value: 'credit_card', label: '신용카드' },
   { value: 'prepaid', label: '선불/포인트' },
+];
+
+// 배지 색상 팔레트
+const badgeColors = [
+  { value: '#6B7280', label: '회색' },
+  { value: '#EF4444', label: '빨강' },
+  { value: '#F97316', label: '주황' },
+  { value: '#EAB308', label: '노랑' },
+  { value: '#22C55E', label: '초록' },
+  { value: '#14B8A6', label: '청록' },
+  { value: '#3B82F6', label: '파랑' },
+  { value: '#8B5CF6', label: '보라' },
+  { value: '#EC4899', label: '핑크' },
+  { value: '#78716C', label: '갈색' },
 ];
 
 function SortableAccountItem({
@@ -91,9 +106,18 @@ function SortableAccountItem({
         <div>
           <div className="flex items-center gap-2">
             <p className="font-semibold text-gray-800">{account.name}</p>
-            <Badge className={getAccountTypeColor(account.account_type)}>
-              {getAccountTypeLabel(account.account_type)}
-            </Badge>
+            {account.badge_color ? (
+              <span
+                className="px-2 py-0.5 rounded text-xs font-medium text-white"
+                style={{ backgroundColor: account.badge_color }}
+              >
+                {getAccountTypeLabel(account.account_type)}
+              </span>
+            ) : (
+              <Badge className={getAccountTypeColor(account.account_type)}>
+                {getAccountTypeLabel(account.account_type)}
+              </Badge>
+            )}
           </div>
           {account.description && (
             <p className="text-sm text-gray-500 mt-1">{account.description}</p>
@@ -140,6 +164,8 @@ export default function AccountsPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<AccountForm>({
     resolver: zodResolver(accountSchema),
@@ -148,8 +174,11 @@ export default function AccountsPage() {
       account_type: 'bank',
       balance: '0',
       description: '',
+      badge_color: '#6B7280',
     },
   });
+
+  const selectedBadgeColor = watch('badge_color');
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -178,6 +207,7 @@ export default function AccountsPage() {
       account_type: 'bank',
       balance: '0',
       description: '',
+      badge_color: '#6B7280',
     });
     setIsModalOpen(true);
   };
@@ -189,6 +219,7 @@ export default function AccountsPage() {
       account_type: account.account_type as AccountType,
       balance: String(account.balance),
       description: account.description || '',
+      badge_color: account.badge_color || '#6B7280',
     });
     setIsModalOpen(true);
   };
@@ -209,6 +240,7 @@ export default function AccountsPage() {
           account_type: data.account_type,
           balance,
           description: data.description,
+          badge_color: data.badge_color,
         });
       } else {
         await createAccount({
@@ -216,6 +248,7 @@ export default function AccountsPage() {
           account_type: data.account_type,
           balance,
           description: data.description,
+          badge_color: data.badge_color,
         });
       }
       handleClose();
@@ -327,6 +360,32 @@ export default function AccountsPage() {
               error={errors.description?.message}
               {...register('description')}
             />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                배지 색상
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {badgeColors.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => setValue('badge_color', color.value)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${
+                      selectedBadgeColor === color.value
+                        ? 'border-gray-800 scale-110'
+                        : 'border-transparent hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    title={color.label}
+                  >
+                    {selectedBadgeColor === color.value && (
+                      <Check size={16} className="text-white" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="flex justify-end gap-3 mt-6">
               <Button type="button" variant="secondary" onClick={handleClose}>

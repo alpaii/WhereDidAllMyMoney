@@ -223,6 +223,25 @@ export default function ExpensesPage() {
 
   const categoryOptions = categories.map((cat) => ({ value: cat.id, label: cat.name }));
 
+  // 계좌 배지 렌더링 함수
+  const renderAccountBadge = (accountId: string, accountName?: string) => {
+    const account = accounts.find(a => a.id === accountId);
+    const name = accountName || account?.name || '알 수 없음';
+    const badgeColor = account?.badge_color;
+
+    if (badgeColor) {
+      return (
+        <span
+          className="px-2 py-0.5 rounded text-xs font-medium text-white"
+          style={{ backgroundColor: badgeColor }}
+        >
+          {name}
+        </span>
+      );
+    }
+    return <span className="text-sm text-gray-500">{name}</span>;
+  };
+
   const subcategoryOptions = subcategories.map((sub) => ({ value: sub.id, label: sub.name }));
 
   return (
@@ -263,7 +282,7 @@ export default function ExpensesPage() {
                         <p className="text-sm text-[rgb(161,25,25)] font-mono">
                           {formatDateTime(expense.expense_at)}
                         </p>
-                        <p className="text-sm text-gray-500">{expense.account_name}</p>
+                        <div className="mt-1">{renderAccountBadge(expense.account_id, expense.account_name)}</div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -344,7 +363,7 @@ export default function ExpensesPage() {
                           <span className="text-gray-500"> &gt; {expense.subcategory_name}</span>
                         )}
                       </TableCell>
-                      <TableCell>{expense.account_name}</TableCell>
+                      <TableCell>{renderAccountBadge(expense.account_id, expense.account_name)}</TableCell>
                       <TableCell className="max-w-xs truncate">{expense.memo || '-'}</TableCell>
                       <TableCell className={`text-right font-medium font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
                         {formatCurrency(Number(expense.amount))}

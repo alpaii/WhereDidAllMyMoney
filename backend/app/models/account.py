@@ -25,6 +25,7 @@ class Account(Base):
     is_primary = Column(Boolean, default=False)
     description = Column(String(500), nullable=True)
     sort_order = Column(Integer, nullable=False, default=0)
+    badge_color = Column(String(7), nullable=True)  # Hex color e.g. #FF5733
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

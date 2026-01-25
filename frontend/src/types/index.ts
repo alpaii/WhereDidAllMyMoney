@@ -35,6 +35,7 @@ export interface Account {
   account_type: AccountType;
   balance: number;
   description?: string;
+  badge_color?: string;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -46,6 +47,7 @@ export interface AccountCreate {
   account_type: AccountType;
   balance?: number;
   description?: string;
+  badge_color?: string;
 }
 
 // Transfer types

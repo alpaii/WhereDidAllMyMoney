@@ -12,6 +12,7 @@ class AccountBase(BaseModel):
     account_type: AccountType
     is_primary: bool = False
     description: Optional[str] = Field(None, max_length=500)
+    badge_color: Optional[str] = Field(None, max_length=7, pattern=r'^#[0-9A-Fa-f]{6}$')
 
 
 # Create
@@ -26,6 +27,7 @@ class AccountUpdate(BaseModel):
     is_primary: Optional[bool] = None
     balance: Optional[Decimal] = None
     description: Optional[str] = Field(None, max_length=500)
+    badge_color: Optional[str] = Field(None, max_length=7, pattern=r'^#[0-9A-Fa-f]{6}$')
 
 
 # Response
@@ -37,6 +39,7 @@ class AccountResponse(BaseModel):
     balance: Decimal
     is_primary: bool
     description: Optional[str] = None
+    badge_color: Optional[str] = None
     sort_order: int
     created_at: datetime
     updated_at: Optional[datetime]

@@ -156,6 +156,29 @@ export default function TransfersPage() {
     ...accounts.map((acc) => ({ value: acc.id, label: `${acc.name} (${formatCurrency(Number(acc.balance))})` })),
   ];
 
+  // 계좌 배지 렌더링 함수
+  const renderAccountBadge = (accountId: string) => {
+    const account = accounts.find(a => a.id === accountId);
+    const name = account?.name || '알 수 없음';
+    const badgeColor = account?.badge_color;
+
+    if (badgeColor) {
+      return (
+        <span
+          className="px-2 py-0.5 rounded text-xs font-medium text-white"
+          style={{ backgroundColor: badgeColor }}
+        >
+          {name}
+        </span>
+      );
+    }
+    return (
+      <span className="px-2 py-1 bg-gray-100 rounded text-sm">
+        {name}
+      </span>
+    );
+  };
+
   return (
     <DashboardLayout
       title="이체 내역"
@@ -184,13 +207,9 @@ export default function TransfersPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="px-2 py-1 bg-gray-100 rounded text-sm">
-                        {accounts.find(a => a.id === transfer.from_account_id)?.name || '알 수 없음'}
-                      </div>
+                      {renderAccountBadge(transfer.from_account_id)}
                       <ArrowRight className="text-gray-400" size={16} />
-                      <div className="px-2 py-1 bg-gray-100 rounded text-sm">
-                        {accounts.find(a => a.id === transfer.to_account_id)?.name || '알 수 없음'}
-                      </div>
+                      {renderAccountBadge(transfer.to_account_id)}
                     </div>
                     <div className="text-right">
                       <p className="font-bold font-mono text-gray-800">
@@ -253,8 +272,8 @@ export default function TransfersPage() {
                   transfers.map((transfer) => (
                     <TableRow key={transfer.id}>
                       <TableCell><span className="font-mono text-xs text-[rgb(161,25,25)]">{formatDateTime(transfer.transferred_at)}</span></TableCell>
-                      <TableCell>{accounts.find(a => a.id === transfer.from_account_id)?.name || '알 수 없음'}</TableCell>
-                      <TableCell>{accounts.find(a => a.id === transfer.to_account_id)?.name || '알 수 없음'}</TableCell>
+                      <TableCell>{renderAccountBadge(transfer.from_account_id)}</TableCell>
+                      <TableCell>{renderAccountBadge(transfer.to_account_id)}</TableCell>
                       <TableCell className="max-w-xs truncate">{transfer.memo || '-'}</TableCell>
                       <TableCell className="text-right font-medium font-mono">
                         {formatCurrency(Number(transfer.amount))}
