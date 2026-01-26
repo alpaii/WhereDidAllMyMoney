@@ -9,8 +9,6 @@ import { DashboardLayout } from '@/components/layout';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Button,
   Input,
   Select,
@@ -323,6 +321,9 @@ export default function ExpensesPage() {
                             <span className="text-gray-500"> &gt; {expense.subcategory_name}</span>
                           )}
                         </p>
+                        {expense.product_name && (
+                          <p className="text-sm text-gray-800 font-semibold">{expense.product_name}</p>
+                        )}
                         <p className="text-sm text-[rgb(161,25,25)] font-mono">
                           {formatDateTime(expense.expense_at)}
                         </p>
@@ -377,23 +378,24 @@ export default function ExpensesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>날짜</TableHead>
+                  <TableHead>상품</TableHead>
+                  <TableHead className="text-right">금액</TableHead>
+                  <TableHead>메모</TableHead>
                   <TableHead>카테고리</TableHead>
                   <TableHead>계좌</TableHead>
-                  <TableHead>메모</TableHead>
-                  <TableHead className="text-right">금액</TableHead>
                   <TableHead className="text-right">작업</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       로딩 중...
                     </TableCell>
                   </TableRow>
                 ) : expenses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                       등록된 지출이 없습니다
                     </TableCell>
                   </TableRow>
@@ -401,6 +403,11 @@ export default function ExpensesPage() {
                   expenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell><span className="font-mono text-xs text-[rgb(161,25,25)]">{formatDateTime(expense.expense_at)}</span></TableCell>
+                      <TableCell className="text-gray-800 font-semibold">{expense.product_name || '-'}</TableCell>
+                      <TableCell className={`text-right font-medium font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
+                        {formatCurrency(Number(expense.amount))}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">{expense.memo || '-'}</TableCell>
                       <TableCell>
                         {expense.category_name || '미분류'}
                         {expense.subcategory_name && (
@@ -408,10 +415,6 @@ export default function ExpensesPage() {
                         )}
                       </TableCell>
                       <TableCell>{renderAccountBadge(expense.account_id, expense.account_name)}</TableCell>
-                      <TableCell className="max-w-xs truncate">{expense.memo || '-'}</TableCell>
-                      <TableCell className={`text-right font-medium font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
-                        {formatCurrency(Number(expense.amount))}
-                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           {expense.purchase_url && (
