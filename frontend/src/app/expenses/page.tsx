@@ -502,6 +502,20 @@ export default function ExpensesPage() {
           </CardContent>
         </Card>
 
+        {/* 합계 금액 */}
+        <Card>
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-gray-600">
+                합계 ({filteredExpenses.length}건)
+              </span>
+              <span className="text-lg font-bold font-mono">
+                {formatCurrency(filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0))}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Expense list - Mobile */}
         <div className="lg:hidden space-y-4">
           {isLoading ? (
