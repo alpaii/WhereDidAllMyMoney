@@ -205,7 +205,7 @@ export default function ProductsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div>
-                        <p className="font-medium text-gray-800">{product.name}</p>
+                        <p className="font-semibold text-gray-800">{product.name}</p>
                         <p className="text-sm text-gray-500">
                           {getSubcategoryName(product.subcategory_id)}
                         </p>
@@ -271,7 +271,7 @@ export default function ProductsPage() {
                 ) : (
                   products.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell>{product.name}</TableCell>
+                      <TableCell className="font-semibold">{product.name}</TableCell>
                       <TableCell>{getSubcategoryName(product.subcategory_id)}</TableCell>
                       <TableCell className="font-mono">
                         {product.default_price
