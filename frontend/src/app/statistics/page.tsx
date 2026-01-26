@@ -10,9 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  LabelList,
 } from 'recharts';
 import { DashboardLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
@@ -30,10 +28,12 @@ export default function StatisticsPage() {
     monthlySummary,
     categorySummary,
     dailyExpenses,
+    monthlyExpenses,
     isLoading,
     fetchMonthlySummary,
     fetchCategorySummary,
     fetchDailyExpenses,
+    fetchMonthlyExpenses,
   } = useStatistics();
 
   const year = currentDate.getFullYear();
@@ -48,6 +48,7 @@ export default function StatisticsPage() {
     fetchMonthlySummary(year, month);
     fetchCategorySummary(year, month);
     fetchDailyExpenses(year, month);
+    fetchMonthlyExpenses(year);
   }, [year, month]);
 
   const prevMonth = () => {
@@ -63,10 +64,9 @@ export default function StatisticsPage() {
     amount: d.total_amount,
   }));
 
-  const categoryChartData = categorySummary.map((c) => ({
-    name: c.category_name,
-    value: c.total_amount,
-    icon: c.category_icon,
+  const monthlyChartData = monthlyExpenses.map((m) => ({
+    month: m.period.slice(5, 7) + '월',
+    amount: m.total_amount,
   }));
 
   return (
@@ -133,7 +133,7 @@ export default function StatisticsPage() {
               ) : (
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dailyChartData}>
+                    <BarChart data={dailyChartData} margin={{ top: 30, right: 10, left: 10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                       <YAxis
@@ -143,7 +143,14 @@ export default function StatisticsPage() {
                       <Tooltip
                         formatter={(value: number) => [formatCurrency(value), '지출']}
                       />
-                      <Bar dataKey="amount" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="amount" fill="#3B82F6" radius={[4, 4, 0, 0]}>
+                        <LabelList
+                          dataKey="amount"
+                          position="top"
+                          fontSize={20}
+                          formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
+                        />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -151,45 +158,40 @@ export default function StatisticsPage() {
             </CardContent>
           </Card>
 
-          {/* Category pie chart */}
+          {/* Monthly expenses chart */}
           <Card>
             <CardHeader>
-              <CardTitle>카테고리별 지출</CardTitle>
+              <CardTitle>{year}년 월별 지출</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
-              ) : categoryChartData.length === 0 ? (
+              ) : monthlyChartData.length === 0 ? (
                 <div className="h-64 flex items-center justify-center text-gray-500">
                   데이터가 없습니다
                 </div>
               ) : (
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) =>
-                          `${name} ${(percent * 100).toFixed(0)}%`
-                        }
-                      >
-                        {categoryChartData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
+                    <BarChart data={monthlyChartData} margin={{ top: 30, right: 10, left: 10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(value) => `${Math.floor(value / 10000)}만`}
+                      />
                       <Tooltip
                         formatter={(value: number) => [formatCurrency(value), '지출']}
                       />
-                    </PieChart>
+                      <Bar dataKey="amount" fill="#10B981" radius={[4, 4, 0, 0]}>
+                        <LabelList
+                          dataKey="amount"
+                          position="top"
+                          fontSize={20}
+                          formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
+                        />
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}

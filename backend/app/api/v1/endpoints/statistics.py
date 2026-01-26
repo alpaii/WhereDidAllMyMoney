@@ -191,15 +191,18 @@ async def get_expenses_by_period(
     }
     date_format = format_map[period_type]
 
+    # Define the period expression once to avoid PostgreSQL GROUP BY issues
+    period_expr = func.to_char(Expense.expense_at, date_format)
+
     query = (
         select(
-            func.to_char(Expense.expense_at, date_format).label("period"),
+            period_expr.label("period"),
             func.coalesce(func.sum(Expense.amount), 0).label("total"),
             func.count(Expense.id).label("count")
         )
         .where(*conditions)
-        .group_by(func.to_char(Expense.expense_at, date_format))
-        .order_by(func.to_char(Expense.expense_at, date_format).desc())
+        .group_by(period_expr)
+        .order_by(period_expr.desc())
     )
 
     result = await db.execute(query)

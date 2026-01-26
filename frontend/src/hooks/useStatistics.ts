@@ -2,10 +2,17 @@ import { useState, useCallback } from 'react';
 import api from '@/lib/api';
 import type { MonthlySummary, CategorySummary, DailyExpense } from '@/types';
 
+interface MonthlyExpense {
+  period: string;
+  total_amount: number;
+  count: number;
+}
+
 export function useStatistics() {
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary | null>(null);
   const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpense[]>([]);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,14 +72,40 @@ export function useStatistics() {
     }
   }, []);
 
+  const fetchMonthlyExpenses = useCallback(async (year: number) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
+      const response = await api.get<MonthlyExpense[]>(
+        `/statistics/by-period?period_type=monthly&start_date=${startDate}&end_date=${endDate}`
+      );
+      const data = Array.isArray(response.data) ? response.data : [];
+      // 날짜 오름차순 정렬
+      data.sort((a, b) => a.period.localeCompare(b.period));
+      setMonthlyExpenses(data);
+      return data;
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || '월별 통계를 불러오는데 실패했습니다');
+      setMonthlyExpenses([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     monthlySummary,
     categorySummary,
     dailyExpenses,
+    monthlyExpenses,
     isLoading,
     error,
     fetchMonthlySummary,
     fetchCategorySummary,
     fetchDailyExpenses,
+    fetchMonthlyExpenses,
   };
 }
