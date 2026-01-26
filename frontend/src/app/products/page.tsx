@@ -333,7 +333,6 @@ export default function ProductsPage() {
             <Input
               id="name"
               label="상품명"
-              placeholder="예: 아메리카노"
               error={errors.name?.message}
               {...register('name')}
             />
@@ -342,7 +341,6 @@ export default function ProductsPage() {
               id="default_price"
               type="text"
               label="기본 가격 (선택)"
-              placeholder="10,000"
               error={errors.default_price?.message}
               {...register('default_price', { onChange: handlePriceChange })}
             />
@@ -350,7 +348,6 @@ export default function ProductsPage() {
             <Input
               id="memo"
               label="메모 (선택)"
-              placeholder="예: 스타벅스 단골 메뉴"
               error={errors.memo?.message}
               {...register('memo')}
             />
