@@ -40,9 +40,30 @@ export default function ProductsPage() {
   const { categories } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
+  // 필터 상태
+  const [filterCategoryId, setFilterCategoryId] = useState<string>('');
+  const [filterSubcategoryId, setFilterSubcategoryId] = useState<string>('');
+
   // categories에서 직접 서브카테고리 가져오기 (API 호출 없이 동기적으로)
   const selectedCategoryData = categories.find(c => c.id === selectedCategoryId);
   const subcategories = selectedCategoryData?.subcategories || [];
+
+  // 필터용 서브카테고리
+  const filterCategoryData = categories.find(c => c.id === filterCategoryId);
+  const filterSubcategories = filterCategoryData?.subcategories || [];
+
+  // 필터링된 상품 목록
+  const filteredProducts = products.filter(product => {
+    if (filterSubcategoryId) {
+      return product.subcategory_id === filterSubcategoryId;
+    }
+    if (filterCategoryId) {
+      const category = categories.find(c => c.id === filterCategoryId);
+      const subcategoryIds = category?.subcategories?.map(s => s.id) || [];
+      return subcategoryIds.includes(product.subcategory_id);
+    }
+    return true;
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -168,6 +189,22 @@ export default function ProductsPage() {
     ...subcategories.map((sub) => ({ value: sub.id, label: sub.name })),
   ];
 
+  // 필터용 옵션
+  const filterCategoryOptions = [
+    { value: '', label: '전체 카테고리' },
+    ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
+  ];
+
+  const filterSubcategoryOptions = [
+    { value: '', label: '전체 서브카테고리' },
+    ...filterSubcategories.map((sub) => ({ value: sub.id, label: sub.name })),
+  ];
+
+  const handleFilterCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilterCategoryId(e.target.value);
+    setFilterSubcategoryId('');
+  };
+
   // Get category/subcategory name for display
   const getSubcategoryName = (subcategoryId: string) => {
     for (const category of categories) {
@@ -188,21 +225,42 @@ export default function ProductsPage() {
         </Button>
       }
     >
-      <div className="space-y-1">
+      <div className="space-y-4">
+        {/* Filter */}
+        <Card>
+          <CardContent className="py-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                id="filter-category"
+                options={filterCategoryOptions}
+                value={filterCategoryId}
+                onChange={handleFilterCategoryChange}
+              />
+              <Select
+                id="filter-subcategory"
+                options={filterSubcategoryOptions}
+                value={filterSubcategoryId}
+                onChange={(e) => setFilterSubcategoryId(e.target.value)}
+                disabled={!filterCategoryId}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Product list - Mobile */}
         <div className="lg:hidden space-y-4">
           {isLoading ? (
             [1, 2, 3].map((i) => (
               <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />
             ))
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-gray-500">
-                등록된 상품이 없습니다
+                {products.length === 0 ? '등록된 상품이 없습니다' : '검색 결과가 없습니다'}
               </CardContent>
             </Card>
           ) : (
-            products.map((product) => (
+            filteredProducts.map((product) => (
               <Card key={product.id}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
@@ -265,14 +323,14 @@ export default function ProductsPage() {
                       로딩 중...
                     </TableCell>
                   </TableRow>
-                ) : products.length === 0 ? (
+                ) : filteredProducts.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                      등록된 상품이 없습니다
+                      {products.length === 0 ? '등록된 상품이 없습니다' : '검색 결과가 없습니다'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  products.map((product) => (
+                  filteredProducts.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-semibold">{product.name}</TableCell>
                       <TableCell>{getSubcategoryName(product.subcategory_id)}</TableCell>
