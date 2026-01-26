@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,6 +39,49 @@ const expenseSchema = z.object({
 
 type ExpenseForm = z.infer<typeof expenseSchema>;
 
+// 로컬 날짜를 YYYY-MM-DD 형식으로 포맷 (컴포넌트 외부)
+const formatLocalDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// 날짜 프리셋 계산 함수 (컴포넌트 외부)
+const getDateRange = (preset: string) => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const dayOfWeek = today.getDay();
+
+  switch (preset) {
+    case 'this_week': {
+      // 월요일(1)부터 일요일(0)까지
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const startOfWeek = new Date(year, month, today.getDate() + diffToMonday);
+      const endOfWeek = new Date(year, month, today.getDate() + diffToMonday + 6);
+      return {
+        start: formatLocalDate(startOfWeek),
+        end: formatLocalDate(endOfWeek),
+      };
+    }
+    case 'this_month': {
+      return {
+        start: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+        end: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`,
+      };
+    }
+    case 'this_year': {
+      return {
+        start: `${year}-01-01`,
+        end: `${year}-12-31`,
+      };
+    }
+    default:
+      return { start: '', end: '' };
+  }
+};
+
 export default function ExpensesPage() {
   const [page, setPage] = useState(1);
   const { expenses, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense } =
@@ -48,6 +91,52 @@ export default function ExpensesPage() {
   const { products } = useProducts();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
+
+  // 필터 상태
+  const [filterDatePreset, setFilterDatePreset] = useState<string>('this_month');
+  const [filterStartDate, setFilterStartDate] = useState<string>('');
+  const [filterEndDate, setFilterEndDate] = useState<string>('');
+  const [filterCategoryId, setFilterCategoryId] = useState<string>('');
+  const [filterSubcategoryId, setFilterSubcategoryId] = useState<string>('');
+  const [filterProductId, setFilterProductId] = useState<string>('');
+
+  // 클라이언트에서 초기 날짜 설정 (SSR 시간대 문제 방지)
+  useEffect(() => {
+    const range = getDateRange('this_month');
+    setFilterStartDate(range.start);
+    setFilterEndDate(range.end);
+  }, []);
+
+  // 날짜 프리셋 변경 핸들러
+  const handleDatePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const preset = e.target.value;
+    setFilterDatePreset(preset);
+    if (preset !== 'custom') {
+      const range = getDateRange(preset);
+      setFilterStartDate(range.start);
+      setFilterEndDate(range.end);
+    }
+  };
+
+  // 필터용 서브카테고리
+  const filterCategoryData = categories.find(c => c.id === filterCategoryId);
+  const filterSubcategories = filterCategoryData?.subcategories || [];
+
+  // 필터용 상품 목록
+  const filterProductsForSubcategory = filterSubcategoryId
+    ? products.filter(p => p.subcategory_id === filterSubcategoryId)
+    : [];
+
+  // 클라이언트 측 필터링 (서브카테고리, 상품)
+  const filteredExpenses = expenses.filter(expense => {
+    if (filterSubcategoryId && expense.subcategory_id !== filterSubcategoryId) {
+      return false;
+    }
+    if (filterProductId && expense.product_id !== filterProductId) {
+      return false;
+    }
+    return true;
+  });
 
   // categories에서 직접 서브카테고리 가져오기 (API 호출 없이 동기적으로)
   const selectedCategoryData = categories.find(c => c.id === selectedCategoryId);
@@ -140,13 +229,6 @@ export default function ExpensesPage() {
     setValue('amount', formatted);
   };
 
-  const lastPageRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (lastPageRef.current === page) return;
-    lastPageRef.current = page;
-    fetchExpenses({ page, size: 10 });
-  }, [page, fetchExpenses]);
 
   const openCreateModal = () => {
     setEditingExpense(null);
@@ -304,6 +386,45 @@ export default function ExpensesPage() {
     })),
   ];
 
+  // 필터용 옵션
+  const filterCategoryOptions = [
+    { value: '', label: '전체 카테고리' },
+    ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
+  ];
+
+  const filterSubcategoryOptions = [
+    { value: '', label: '전체 서브카테고리' },
+    ...filterSubcategories.map((sub) => ({ value: sub.id, label: sub.name })),
+  ];
+
+  const filterProductOptions = [
+    { value: '', label: '전체 상품' },
+    ...filterProductsForSubcategory.map((product) => ({ value: product.id, label: product.name })),
+  ];
+
+  const handleFilterCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilterCategoryId(e.target.value);
+    setFilterSubcategoryId('');
+    setFilterProductId('');
+  };
+
+  const handleFilterSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilterSubcategoryId(e.target.value);
+    setFilterProductId('');
+  };
+
+  // 필터 변경 시 데이터 다시 불러오기 (날짜가 설정된 후에만)
+  useEffect(() => {
+    if (!filterStartDate || !filterEndDate) return;
+    fetchExpenses({
+      page,
+      size: 50,
+      startDate: filterStartDate,
+      endDate: filterEndDate,
+      categoryId: filterCategoryId || undefined,
+    });
+  }, [page, filterStartDate, filterEndDate, filterCategoryId, fetchExpenses]);
+
   return (
     <DashboardLayout
       title="지출 내역"
@@ -313,21 +434,88 @@ export default function ExpensesPage() {
         </Button>
       }
     >
-      <div className="space-y-1">
+      <div className="space-y-4">
+        {/* Filter */}
+        <Card>
+          <CardContent className="py-3 space-y-3">
+            {/* 날짜 필터 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Select
+                id="filter-date-preset"
+                label="기간"
+                options={[
+                  { value: 'this_week', label: '이번 주' },
+                  { value: 'this_month', label: '이번 달' },
+                  { value: 'this_year', label: '이번 년도' },
+                  { value: 'custom', label: '직접 설정' },
+                ]}
+                value={filterDatePreset}
+                onChange={handleDatePresetChange}
+              />
+              <Input
+                id="filter-start-date"
+                type="date"
+                label="시작일"
+                value={filterStartDate}
+                onChange={(e) => {
+                  setFilterStartDate(e.target.value);
+                  setFilterDatePreset('custom');
+                }}
+              />
+              <Input
+                id="filter-end-date"
+                type="date"
+                label="종료일"
+                value={filterEndDate}
+                onChange={(e) => {
+                  setFilterEndDate(e.target.value);
+                  setFilterDatePreset('custom');
+                }}
+              />
+            </div>
+            {/* 카테고리/상품 필터 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Select
+                id="filter-category"
+                label="카테고리"
+                options={filterCategoryOptions}
+                value={filterCategoryId}
+                onChange={handleFilterCategoryChange}
+              />
+              <Select
+                id="filter-subcategory"
+                label="서브카테고리"
+                options={filterSubcategoryOptions}
+                value={filterSubcategoryId}
+                onChange={handleFilterSubcategoryChange}
+                disabled={!filterCategoryId}
+              />
+              <Select
+                id="filter-product"
+                label="상품"
+                options={filterProductOptions}
+                value={filterProductId}
+                onChange={(e) => setFilterProductId(e.target.value)}
+                disabled={!filterSubcategoryId}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Expense list - Mobile */}
         <div className="lg:hidden space-y-4">
           {isLoading ? (
             [1, 2, 3].map((i) => (
               <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />
             ))
-          ) : expenses.length === 0 ? (
+          ) : filteredExpenses.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-gray-500">
-                등록된 지출이 없습니다
+                {expenses.length === 0 ? '등록된 지출이 없습니다' : '검색 결과가 없습니다'}
               </CardContent>
             </Card>
           ) : (
-            expenses.map((expense) => (
+            filteredExpenses.map((expense) => (
               <Card key={expense.id}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
@@ -418,14 +606,14 @@ export default function ExpensesPage() {
                       로딩 중...
                     </TableCell>
                   </TableRow>
-                ) : expenses.length === 0 ? (
+                ) : filteredExpenses.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                      등록된 지출이 없습니다
+                      {expenses.length === 0 ? '등록된 지출이 없습니다' : '검색 결과가 없습니다'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  expenses.map((expense) => (
+                  filteredExpenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell><span className="font-mono text-xs text-[rgb(161,25,25)]">{formatDateTime(expense.expense_at)}</span></TableCell>
                       <TableCell className="break-words">{renderAccountBadge(expense.account_id, expense.account_name)}</TableCell>
