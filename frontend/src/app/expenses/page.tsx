@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Copy } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -251,6 +251,24 @@ export default function ExpensesPage() {
     }
   };
 
+  const handleCopy = async (expense: Expense) => {
+    try {
+      await createExpense({
+        account_id: expense.account_id,
+        category_id: expense.category_id,
+        subcategory_id: expense.subcategory_id,
+        product_id: expense.product_id || null,
+        amount: Number(expense.amount),
+        memo: expense.memo || null,
+        purchase_url: expense.purchase_url || null,
+        expense_at: getSeoulNow(),
+      });
+      fetchExpenses();
+    } catch (error) {
+      console.error('Failed to copy expense:', error);
+    }
+  };
+
   const accountOptions = accounts.map((acc) => ({ value: acc.id, label: acc.name }));
 
   const categoryOptions = categories.map((cat) => ({ value: cat.id, label: cat.name }));
@@ -346,6 +364,13 @@ export default function ExpensesPage() {
                           </a>
                         )}
                         <button
+                          onClick={() => handleCopy(expense)}
+                          className="p-1 text-gray-500 hover:text-primary-600"
+                          title="복사"
+                        >
+                          <Copy size={16} />
+                        </button>
+                        <button
                           onClick={() => openEditModal(expense)}
                           className="p-1 text-gray-500 hover:text-primary-600"
                         >
@@ -427,6 +452,13 @@ export default function ExpensesPage() {
                               <ExternalLink size={16} />
                             </a>
                           )}
+                          <button
+                            onClick={() => handleCopy(expense)}
+                            className="p-1 text-gray-500 hover:text-primary-600"
+                            title="복사"
+                          >
+                            <Copy size={16} />
+                          </button>
                           <button
                             onClick={() => openEditModal(expense)}
                             className="p-1 text-gray-500 hover:text-primary-600"
