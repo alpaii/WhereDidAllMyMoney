@@ -89,12 +89,14 @@ class ProductUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     default_price: Optional[Decimal] = None
     memo: Optional[str] = Field(None, max_length=1000)
+    is_favorite: Optional[bool] = None
 
 
 class ProductResponse(ProductBase):
     id: UUID
     subcategory_id: UUID
     user_id: UUID
+    is_favorite: bool = False
     created_at: datetime
     updated_at: Optional[datetime]
 

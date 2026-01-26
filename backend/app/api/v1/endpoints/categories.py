@@ -334,13 +334,14 @@ async def get_products(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """제품 목록 조회 (본인 제품만)"""
+    """제품 목록 조회 (본인 제품만, 즐겨찾기 우선)"""
     query = select(Product).where(Product.user_id == current_user.id)
 
     if subcategory_id:
         query = query.where(Product.subcategory_id == subcategory_id)
 
-    query = query.order_by(Product.name)
+    # 즐겨찾기 우선 정렬, 그 다음 이름순
+    query = query.order_by(Product.is_favorite.desc(), Product.name)
     result = await db.execute(query)
 
     return result.scalars().all()
@@ -440,3 +441,31 @@ async def delete_product(
 
     await db.delete(product)
     await db.commit()
+
+
+@router.post("/products/{product_id}/toggle-favorite", response_model=ProductResponse)
+async def toggle_product_favorite(
+    product_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """제품 즐겨찾기 토글"""
+    result = await db.execute(
+        select(Product).where(
+            Product.id == product_id,
+            Product.user_id == current_user.id
+        )
+    )
+    product = result.scalar_one_or_none()
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
+
+    product.is_favorite = not product.is_favorite
+    await db.commit()
+    await db.refresh(product)
+
+    return product

@@ -98,6 +98,7 @@ export interface Product {
   subcategory_id: string;
   default_price?: number;
   memo?: string;
+  is_favorite: boolean;
   created_at: string;
   subcategory?: Subcategory;
 }

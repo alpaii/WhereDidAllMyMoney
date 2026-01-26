@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -35,7 +35,7 @@ const productSchema = z.object({
 type ProductForm = z.infer<typeof productSchema>;
 
 export default function ProductsPage() {
-  const { products, isLoading, fetchProducts, createProduct, updateProduct, deleteProduct } =
+  const { products, isLoading, fetchProducts, createProduct, updateProduct, deleteProduct, toggleFavorite } =
     useProducts();
   const { categories } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -265,6 +265,15 @@ export default function ProductsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => toggleFavorite(product.id)}
+                        className="p-1"
+                      >
+                        <Star
+                          size={20}
+                          className={product.is_favorite ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}
+                        />
+                      </button>
                       <div>
                         <p className="font-semibold text-gray-800">{product.name}</p>
                         <p className="text-sm text-gray-500">
@@ -309,6 +318,7 @@ export default function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">★</TableHead>
                   <TableHead>상품명</TableHead>
                   <TableHead>카테고리</TableHead>
                   <TableHead>기본 가격</TableHead>
@@ -319,19 +329,30 @@ export default function ProductsPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8">
                       로딩 중...
                     </TableCell>
                   </TableRow>
                 ) : filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                       {products.length === 0 ? '등록된 상품이 없습니다' : '검색 결과가 없습니다'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredProducts.map((product) => (
                     <TableRow key={product.id}>
+                      <TableCell>
+                        <button
+                          onClick={() => toggleFavorite(product.id)}
+                          className="p-1"
+                        >
+                          <Star
+                            size={18}
+                            className={product.is_favorite ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 hover:text-yellow-400'}
+                          />
+                        </button>
+                      </TableCell>
                       <TableCell className="font-semibold">{product.name}</TableCell>
                       <TableCell>{getSubcategoryName(product.subcategory_id)}</TableCell>
                       <TableCell className="font-mono">

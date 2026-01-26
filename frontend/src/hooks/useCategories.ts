@@ -212,6 +212,13 @@ export function useProducts() {
     setProducts((prev) => prev.filter((product) => product.id !== id));
   };
 
+  const toggleFavorite = async (id: string) => {
+    const response = await api.post<Product>(`/categories/products/${id}/toggle-favorite`);
+    // 즐겨찾기 변경 후 목록 다시 불러오기 (정렬 유지)
+    await fetchProducts();
+    return response.data;
+  };
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
@@ -226,5 +233,6 @@ export function useProducts() {
     createProduct,
     updateProduct,
     deleteProduct,
+    toggleFavorite,
   };
 }
