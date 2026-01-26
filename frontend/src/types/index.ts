@@ -105,8 +105,8 @@ export interface Product {
 export interface ProductCreate {
   name: string;
   subcategory_id: string;
-  default_price?: number;
-  memo?: string;
+  default_price?: number | null;
+  memo?: string | null;
 }
 
 // Expense types

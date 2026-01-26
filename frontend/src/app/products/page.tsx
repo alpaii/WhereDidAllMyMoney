@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -127,8 +127,8 @@ export default function ProductsPage() {
         name: data.name,
         default_price: data.default_price
           ? parseFloat(data.default_price.replace(/,/g, ''))
-          : undefined,
-        memo: data.memo || undefined,
+          : null,
+        memo: data.memo || null,
       };
 
       if (editingProduct) {
