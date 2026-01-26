@@ -20,7 +20,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui';
-import { useProducts, useCategories, useSubcategories } from '@/hooks/useCategories';
+import { useProducts, useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/utils';
 import type { Product } from '@/types';
 
@@ -39,7 +39,10 @@ export default function ProductsPage() {
     useProducts();
   const { categories } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const { subcategories } = useSubcategories(selectedCategoryId);
+
+  // categories에서 직접 서브카테고리 가져오기 (API 호출 없이 동기적으로)
+  const selectedCategoryData = categories.find(c => c.id === selectedCategoryId);
+  const subcategories = selectedCategoryData?.subcategories || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
