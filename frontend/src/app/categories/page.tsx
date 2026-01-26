@@ -483,7 +483,6 @@ export default function CategoriesPage() {
             <Input
               id="name"
               label="카테고리 이름"
-              placeholder="예: 식비"
               error={categoryForm.formState.errors.name?.message}
               {...categoryForm.register('name')}
             />
@@ -518,7 +517,6 @@ export default function CategoriesPage() {
             <Input
               id="subcategory-name"
               label="서브카테고리 이름"
-              placeholder="예: 점심"
               error={subcategoryForm.formState.errors.name?.message}
               {...subcategoryForm.register('name')}
             />
