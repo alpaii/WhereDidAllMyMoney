@@ -200,7 +200,7 @@ export function useProducts() {
   };
 
   const updateProduct = async (id: string, data: Partial<ProductCreate>) => {
-    const response = await api.put<Product>(`/categories/products/${id}`, data);
+    const response = await api.patch<Product>(`/categories/products/${id}`, data);
     setProducts((prev) =>
       prev.map((product) => (product.id === id ? response.data : product))
     );

@@ -100,6 +100,8 @@ function SortableSubcategoryItem({
 
 function SortableCategoryItem({
   category,
+  isOpen,
+  onToggleOpen,
   onEditCategory,
   onDeleteCategory,
   onAddSubcategory,
@@ -109,6 +111,8 @@ function SortableCategoryItem({
   subcategorySensors,
 }: {
   category: Category;
+  isOpen: boolean;
+  onToggleOpen: () => void;
   onEditCategory: (category: Category) => void;
   onDeleteCategory: (id: string) => void;
   onAddSubcategory: (categoryId: string) => void;
@@ -117,7 +121,6 @@ function SortableCategoryItem({
   onSubcategoryDragEnd: (categoryId: string, event: DragEndEvent) => void;
   subcategorySensors: ReturnType<typeof useSensors>;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const hasSubcategories = category.subcategories && category.subcategories.length > 0;
 
   const {
@@ -151,7 +154,7 @@ function SortableCategoryItem({
             <GripVertical size={20} />
           </button>
           <button
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={onToggleOpen}
             className="flex items-center gap-3 flex-1 text-left"
           >
             <span className="font-medium text-gray-800">{category.name}</span>
@@ -241,6 +244,19 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategory = (categoryId: string) => {
+    setOpenCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  };
 
   const categorySensors = useSensors(
     useSensor(PointerSensor),
@@ -436,6 +452,8 @@ export default function CategoriesPage() {
                       <SortableCategoryItem
                         key={category.id}
                         category={category}
+                        isOpen={openCategories.has(category.id)}
+                        onToggleOpen={() => toggleCategory(category.id)}
                         onEditCategory={openEditCategoryModal}
                         onDeleteCategory={handleDeleteCategory}
                         onAddSubcategory={openSubcategoryModal}

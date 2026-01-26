@@ -24,7 +24,7 @@ import {
 } from '@/components/ui';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategories, useProducts } from '@/hooks/useCategories';
 import { formatCurrency, formatDateTime, toSeoulDateTimeLocal, getSeoulNow } from '@/lib/utils';
 import type { Expense } from '@/types';
 
@@ -32,6 +32,7 @@ const expenseSchema = z.object({
   account_id: z.string().min(1, '계좌를 선택하세요'),
   category_id: z.string().min(1, '카테고리를 선택하세요'),
   subcategory_id: z.string().min(1, '서브카테고리를 선택하세요'),
+  product_id: z.string().optional(),
   amount: z.string(),
   memo: z.string().optional(),
   purchase_url: z.string().url('올바른 URL을 입력하세요').optional().or(z.literal('')),
@@ -46,7 +47,9 @@ export default function ExpensesPage() {
     useExpenses({ page, size: 10 });
   const { accounts } = useAccounts();
   const { categories } = useCategories();
+  const { products } = useProducts();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
 
   // categories에서 직접 서브카테고리 가져오기 (API 호출 없이 동기적으로)
   const selectedCategoryData = categories.find(c => c.id === selectedCategoryId);
@@ -88,6 +91,7 @@ export default function ExpensesPage() {
   });
 
   const watchCategoryId = watch('category_id');
+  const watchSubcategoryId = watch('subcategory_id');
 
   // 천단위 콤마 포맷 함수 (음수 허용)
   const formatAmountWithComma = (value: string) => {
@@ -105,8 +109,32 @@ export default function ExpensesPage() {
       const selectedCategory = categories.find(c => c.id === watchCategoryId);
       const firstSubcategoryId = selectedCategory?.subcategories?.[0]?.id || '';
       setValue('subcategory_id', firstSubcategoryId);
+      setValue('product_id', '');
     }
   }, [watchCategoryId, selectedCategoryId, setValue, categories]);
+
+  // 서브카테고리 변경 시 상품 선택 초기화
+  useEffect(() => {
+    if (watchSubcategoryId !== selectedSubcategoryId) {
+      setSelectedSubcategoryId(watchSubcategoryId || null);
+      setValue('product_id', '');
+    }
+  }, [watchSubcategoryId, selectedSubcategoryId, setValue]);
+
+  // 선택된 서브카테고리의 상품 목록
+  const filteredProducts = products.filter(p => p.subcategory_id === selectedSubcategoryId);
+
+  // 상품 선택 시 가격 자동 입력
+  const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const productId = e.target.value;
+    if (productId) {
+      const product = products.find(p => p.id === productId);
+      if (product?.default_price) {
+        const formatted = Math.round(product.default_price).toLocaleString('ko-KR');
+        setValue('amount', formatted);
+      }
+    }
+  };
 
   // 금액 입력 시 천단위 콤마 자동 적용
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,10 +169,12 @@ export default function ExpensesPage() {
       }
     }
 
+    setSelectedSubcategoryId(defaultSubcategoryId);
     reset({
       account_id: defaultAccountId,
       category_id: defaultCategoryId,
       subcategory_id: defaultSubcategoryId,
+      product_id: '',
       amount: '',
       memo: '',
       purchase_url: '',
@@ -156,10 +186,12 @@ export default function ExpensesPage() {
   const openEditModal = (expense: Expense) => {
     setEditingExpense(expense);
     setSelectedCategoryId(expense.category_id);
+    setSelectedSubcategoryId(expense.subcategory_id);
     reset({
       account_id: expense.account_id,
       category_id: expense.category_id,
       subcategory_id: expense.subcategory_id,
+      product_id: expense.product_id || '',
       amount: Math.round(Number(expense.amount)).toLocaleString('ko-KR'),
       memo: expense.memo || '',
       purchase_url: expense.purchase_url || '',
@@ -172,6 +204,7 @@ export default function ExpensesPage() {
     setIsModalOpen(false);
     setEditingExpense(null);
     setSelectedCategoryId(null);
+    setSelectedSubcategoryId(null);
     reset();
   };
 
@@ -182,6 +215,7 @@ export default function ExpensesPage() {
         account_id: data.account_id,
         category_id: data.category_id,
         subcategory_id: data.subcategory_id,
+        product_id: data.product_id || undefined,
         amount: parseFloat(data.amount.replace(/,/g, '')) || 0,
         memo: data.memo || undefined,
         purchase_url: data.purchase_url || undefined,
@@ -243,6 +277,16 @@ export default function ExpensesPage() {
   };
 
   const subcategoryOptions = subcategories.map((sub) => ({ value: sub.id, label: sub.name }));
+
+  const productOptions = [
+    { value: '', label: '상품 선택 (선택사항)' },
+    ...filteredProducts.map((product) => ({
+      value: product.id,
+      label: product.default_price
+        ? `${product.name} (${Math.round(product.default_price).toLocaleString('ko-KR')}원)`
+        : product.name,
+    })),
+  ];
 
   return (
     <DashboardLayout
@@ -462,11 +506,19 @@ export default function ExpensesPage() {
               />
             </div>
 
+            {filteredProducts.length > 0 && (
+              <Select
+                id="product_id"
+                label="상품 (선택사항)"
+                options={productOptions}
+                {...register('product_id', { onChange: handleProductChange })}
+              />
+            )}
+
             <Input
               id="amount"
               type="text"
               label="금액"
-              placeholder="10,000"
               error={errors.amount?.message}
               {...register('amount', { onChange: handleAmountChange })}
             />
