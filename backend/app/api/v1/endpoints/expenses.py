@@ -14,51 +14,66 @@ from app.models.category import Category, Subcategory, Product
 from app.models.expense import Expense
 from app.schemas.expense import (
     ExpenseCreate, ExpenseUpdate, ExpenseResponse, ExpenseWithDetails,
-    ExpenseStatsByCategory, ExpenseStatsByPeriod, ExpenseSummary
+    ExpenseStatsByCategory, ExpenseStatsByPeriod, ExpenseSummary,
+    PaginatedExpenseResponse
 )
 from app.core.deps import get_current_user
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[ExpenseWithDetails])
+@router.get("/", response_model=PaginatedExpenseResponse)
 async def get_expenses(
     account_id: Optional[UUID] = None,
     category_id: Optional[UUID] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    limit: int = Query(default=50, le=100),
-    offset: int = Query(default=0, ge=0),
+    page: int = Query(default=1, ge=1),
+    size: int = Query(default=100, le=200),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """지출 내역 조회"""
+    """지출 내역 조회 (페이지네이션)"""
+    # Base conditions
+    conditions = [Expense.user_id == current_user.id]
+
+    if account_id:
+        conditions.append(Expense.account_id == account_id)
+    if category_id:
+        conditions.append(Expense.category_id == category_id)
+    if start_date:
+        conditions.append(Expense.expense_at >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        conditions.append(Expense.expense_at <= datetime.combine(end_date, datetime.max.time()))
+
+    # Count total
+    count_query = select(func.count(Expense.id)).where(*conditions)
+    total_result = await db.execute(count_query)
+    total = total_result.scalar_one()
+
+    # Get paginated data
+    offset = (page - 1) * size
     query = (
         select(Expense)
-        .where(Expense.user_id == current_user.id)
+        .where(*conditions)
         .options(
             selectinload(Expense.account),
             selectinload(Expense.category),
             selectinload(Expense.subcategory),
             selectinload(Expense.product)
         )
+        .order_by(Expense.expense_at.desc())
+        .offset(offset)
+        .limit(size)
     )
-
-    if account_id:
-        query = query.where(Expense.account_id == account_id)
-    if category_id:
-        query = query.where(Expense.category_id == category_id)
-    if start_date:
-        query = query.where(Expense.expense_at >= datetime.combine(start_date, datetime.min.time()))
-    if end_date:
-        query = query.where(Expense.expense_at <= datetime.combine(end_date, datetime.max.time()))
-
-    query = query.order_by(Expense.expense_at.desc()).offset(offset).limit(limit)
     result = await db.execute(query)
     expenses = result.scalars().all()
 
+    # Calculate total pages
+    pages = (total + size - 1) // size if total > 0 else 1
+
     # Convert to response with details
-    return [
+    items = [
         ExpenseWithDetails(
             id=exp.id,
             user_id=exp.user_id,
@@ -79,6 +94,14 @@ async def get_expenses(
         )
         for exp in expenses
     ]
+
+    return PaginatedExpenseResponse(
+        items=items,
+        total=total,
+        page=page,
+        size=size,
+        pages=pages
+    )
 
 
 @router.post("/", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)

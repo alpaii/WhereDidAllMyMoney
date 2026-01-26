@@ -55,6 +55,15 @@ class ExpenseWithDetails(ExpenseResponse):
     product_name: Optional[str] = None
 
 
+# Paginated response
+class PaginatedExpenseResponse(BaseModel):
+    items: list[ExpenseWithDetails]
+    total: int
+    page: int
+    size: int
+    pages: int
+
+
 # Statistics
 class ExpenseStatsByCategory(BaseModel):
     category_id: UUID

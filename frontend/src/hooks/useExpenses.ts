@@ -11,10 +11,19 @@ interface UseExpensesOptions {
   accountId?: string;
 }
 
+interface PaginatedExpenseResponse {
+  items: Expense[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
 export function useExpenses(options: UseExpensesOptions = {}) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,26 +34,25 @@ export function useExpenses(options: UseExpensesOptions = {}) {
 
       const params = new URLSearchParams();
 
-      // Backend uses limit/offset, not page/size
-      const limit = opts?.size || 50;
-      const offset = opts?.page ? (opts.page - 1) * limit : 0;
+      const page = opts?.page || 1;
+      const size = opts?.size || 100;
 
-      params.append('limit', String(limit));
-      params.append('offset', String(offset));
+      params.append('page', String(page));
+      params.append('size', String(size));
       if (opts?.startDate) params.append('start_date', opts.startDate);
       if (opts?.endDate) params.append('end_date', opts.endDate);
       if (opts?.categoryId) params.append('category_id', opts.categoryId);
       if (opts?.accountId) params.append('account_id', opts.accountId);
 
-      // Backend returns array directly, not paginated response
-      const response = await api.get<Expense[]>(
+      const response = await api.get<PaginatedExpenseResponse>(
         `/expenses/?${params.toString()}`
       );
 
-      const data = Array.isArray(response.data) ? response.data : [];
-      setExpenses(data);
-      setTotal(data.length);
-      setPages(1); // Backend doesn't return pagination info
+      const data = response.data;
+      setExpenses(data.items || []);
+      setTotal(data.total || 0);
+      setPages(data.pages || 1);
+      setCurrentPage(data.page || 1);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '지출 목록을 불러오는데 실패했습니다');
@@ -79,6 +87,7 @@ export function useExpenses(options: UseExpensesOptions = {}) {
     expenses,
     total,
     pages,
+    currentPage,
     isLoading,
     error,
     fetchExpenses,

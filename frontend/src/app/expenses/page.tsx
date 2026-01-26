@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, ExternalLink, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -82,10 +82,12 @@ const getDateRange = (preset: string) => {
   }
 };
 
+const PAGE_SIZE = 100;
+
 export default function ExpensesPage() {
   const [page, setPage] = useState(1);
-  const { expenses, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense } =
-    useExpenses({ page, size: 10 });
+  const { expenses, total, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense } =
+    useExpenses({ page, size: PAGE_SIZE });
   const { accounts } = useAccounts();
   const { categories } = useCategories();
   const { products } = useProducts();
@@ -315,7 +317,7 @@ export default function ExpensesPage() {
       setLastSelectedSubcategoryId(data.subcategory_id);
       localStorage.setItem('lastSelectedSubcategoryId', data.subcategory_id);
       handleClose();
-      fetchExpenses({ page, size: 10 });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined });
     } catch (error) {
       console.error('Failed to save expense:', error);
     } finally {
@@ -418,7 +420,7 @@ export default function ExpensesPage() {
     if (!filterStartDate || !filterEndDate) return;
     fetchExpenses({
       page,
-      size: 50,
+      size: PAGE_SIZE,
       startDate: filterStartDate,
       endDate: filterEndDate,
       categoryId: filterCategoryId || undefined,
@@ -507,7 +509,7 @@ export default function ExpensesPage() {
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-gray-600">
-                합계 ({filteredExpenses.length}건)
+                합계 ({filteredExpenses.length}건) / 전체 {total}건
               </span>
               <span className="text-lg font-bold font-mono">
                 {formatCurrency(filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0))}
@@ -515,6 +517,51 @@ export default function ExpensesPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Pagination - Top */}
+        {pages > 1 && (
+          <Card>
+            <CardContent className="py-2">
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                >
+                  처음
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <ChevronLeft size={20} />
+                </Button>
+                <span className="px-4 py-2 text-sm font-medium text-gray-700">
+                  {page} / {pages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPage((p) => Math.min(pages, p + 1))}
+                  disabled={page === pages}
+                >
+                  <ChevronRight size={20} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPage(pages)}
+                  disabled={page === pages}
+                >
+                  마지막
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Expense list - Mobile */}
         <div className="lg:hidden space-y-4">
@@ -682,31 +729,6 @@ export default function ExpensesPage() {
             </Table>
           </CardContent>
         </Card>
-
-        {/* Pagination */}
-        {pages > 1 && (
-          <div className="flex justify-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              이전
-            </Button>
-            <span className="px-4 py-2 text-sm text-gray-600">
-              {page} / {pages}
-            </span>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(pages, p + 1))}
-              disabled={page === pages}
-            >
-              다음
-            </Button>
-          </div>
-        )}
 
         {/* Modal */}
         <Modal
