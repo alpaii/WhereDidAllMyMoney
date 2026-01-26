@@ -374,16 +374,16 @@ export default function ExpensesPage() {
         {/* Expense list - Desktop */}
         <Card className="hidden lg:block">
           <CardContent className="p-0">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>날짜</TableHead>
-                  <TableHead>상품</TableHead>
-                  <TableHead className="text-right">금액</TableHead>
-                  <TableHead>메모</TableHead>
-                  <TableHead>카테고리</TableHead>
-                  <TableHead>계좌</TableHead>
-                  <TableHead className="text-right">작업</TableHead>
+                  <TableHead className="w-2/12">날짜</TableHead>
+                  <TableHead className="w-1/12">계좌</TableHead>
+                  <TableHead className="w-1/12">카테고리</TableHead>
+                  <TableHead className="w-1/12 text-right">금액</TableHead>
+                  <TableHead className="w-3/12">상품</TableHead>
+                  <TableHead className="w-3/12">메모</TableHead>
+                  <TableHead className="w-1/12 text-right">작업</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -403,18 +403,18 @@ export default function ExpensesPage() {
                   expenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell><span className="font-mono text-xs text-[rgb(161,25,25)]">{formatDateTime(expense.expense_at)}</span></TableCell>
-                      <TableCell className="text-gray-800 font-semibold">{expense.product_name || '-'}</TableCell>
-                      <TableCell className={`text-right font-medium font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
-                        {formatCurrency(Number(expense.amount))}
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">{expense.memo || '-'}</TableCell>
-                      <TableCell>
+                      <TableCell className="break-words">{renderAccountBadge(expense.account_id, expense.account_name)}</TableCell>
+                      <TableCell className="break-words">
                         {expense.category_name || '미분류'}
                         {expense.subcategory_name && (
                           <span className="text-gray-500"> &gt; {expense.subcategory_name}</span>
                         )}
                       </TableCell>
-                      <TableCell>{renderAccountBadge(expense.account_id, expense.account_name)}</TableCell>
+                      <TableCell className={`text-right font-medium font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
+                        {formatCurrency(Number(expense.amount))}
+                      </TableCell>
+                      <TableCell className="text-gray-800 font-semibold break-words">{expense.product_name || '-'}</TableCell>
+                      <TableCell className="break-words">{expense.memo || '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           {expense.purchase_url && (
