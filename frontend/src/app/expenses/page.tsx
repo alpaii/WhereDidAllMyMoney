@@ -213,10 +213,10 @@ export default function ExpensesPage() {
         account_id: data.account_id,
         category_id: data.category_id,
         subcategory_id: data.subcategory_id,
-        product_id: data.product_id || undefined,
+        product_id: data.product_id || null,
         amount: parseFloat(data.amount.replace(/,/g, '')) || 0,
-        memo: data.memo || undefined,
-        purchase_url: data.purchase_url || undefined,
+        memo: data.memo || null,
+        purchase_url: data.purchase_url || null,
         expense_at: data.expense_at || undefined,
       };
 
