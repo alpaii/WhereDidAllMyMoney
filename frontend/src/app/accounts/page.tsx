@@ -66,6 +66,16 @@ const badgeColors = [
   { value: '#78716C', label: '갈색' },
 ];
 
+// 천단위 콤마 포맷 함수
+const formatAmountWithComma = (value: string) => {
+  // 숫자와 마이너스 기호만 허용
+  const numericValue = value.replace(/[^0-9-]/g, '');
+  if (!numericValue || numericValue === '-') return numericValue;
+  const num = parseInt(numericValue, 10);
+  if (isNaN(num)) return '';
+  return num.toLocaleString('ko-KR');
+};
+
 function SortableAccountItem({
   account,
   onEdit,
@@ -172,13 +182,19 @@ export default function AccountsPage() {
     defaultValues: {
       name: '',
       account_type: 'bank',
-      balance: '0',
+      balance: '',
       description: '',
       badge_color: '#6B7280',
     },
   });
 
   const selectedBadgeColor = watch('badge_color');
+
+  // 잔액 입력 시 천단위 콤마 자동 적용
+  const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatAmountWithComma(e.target.value);
+    setValue('balance', formatted);
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -205,7 +221,7 @@ export default function AccountsPage() {
     reset({
       name: '',
       account_type: 'bank',
-      balance: '0',
+      balance: '',
       description: '',
       badge_color: '#6B7280',
     });
@@ -217,7 +233,7 @@ export default function AccountsPage() {
     reset({
       name: account.name,
       account_type: account.account_type as AccountType,
-      balance: String(account.balance),
+      balance: Math.round(Number(account.balance)).toLocaleString('ko-KR'),
       description: account.description || '',
       badge_color: account.badge_color || '#6B7280',
     });
@@ -233,7 +249,7 @@ export default function AccountsPage() {
   const onSubmit = async (data: AccountForm) => {
     try {
       setIsSubmitting(true);
-      const balance = parseFloat(data.balance) || 0;
+      const balance = parseInt(data.balance.replace(/,/g, ''), 10) || 0;
       if (editingAccount) {
         await updateAccount(editingAccount.id, {
           name: data.name,
@@ -331,7 +347,6 @@ export default function AccountsPage() {
             <Input
               id="name"
               label="계좌명"
-              placeholder="예: 주거래 계좌"
               error={errors.name?.message}
               {...register('name')}
             />
@@ -346,17 +361,15 @@ export default function AccountsPage() {
 
             <Input
               id="balance"
-              type="number"
+              type="text"
               label="잔액"
-              placeholder="0"
               error={errors.balance?.message}
-              {...register('balance')}
+              {...register('balance', { onChange: handleBalanceChange })}
             />
 
             <Input
               id="description"
               label="설명 (선택)"
-              placeholder="예: 월급 입금용"
               error={errors.description?.message}
               {...register('description')}
             />

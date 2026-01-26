@@ -82,6 +82,7 @@ async def create_account(
         balance=account_data.balance,
         is_primary=account_data.is_primary,
         description=account_data.description,
+        badge_color=account_data.badge_color,
         sort_order=max_order + 1
     )
     db.add(account)
