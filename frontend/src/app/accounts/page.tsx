@@ -296,6 +296,24 @@ export default function AccountsPage() {
       }
     >
       <div className="space-y-6">
+        {/* Total Balance Summary */}
+        {!isLoading && accounts.length > 0 && (
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 font-medium">전체 잔액</span>
+                <span className={`text-2xl font-bold ${
+                  accounts.reduce((sum, acc) => sum + Number(acc.balance), 0) < 0
+                    ? 'text-red-600'
+                    : 'text-gray-800'
+                }`}>
+                  {formatCurrency(accounts.reduce((sum, acc) => sum + Number(acc.balance), 0))}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Accounts list */}
         <Card>
           <CardContent className="pt-6">
