@@ -120,6 +120,7 @@ export interface Expense {
   category_id: string;
   subcategory_id: string;
   product_id?: string;
+  store_id?: string;
   amount: number;
   memo?: string;
   purchase_url?: string;
@@ -131,6 +132,7 @@ export interface Expense {
   category_name?: string;
   subcategory_name?: string;
   product_name?: string;
+  store_name?: string;
   // Keep nested objects for backwards compatibility
   account?: Account;
   category?: Category;
@@ -143,6 +145,7 @@ export interface ExpenseCreate {
   category_id: string;
   subcategory_id: string;
   product_id: string;
+  store_id?: string | null;
   amount: number;
   memo?: string | null;
   purchase_url?: string | null;

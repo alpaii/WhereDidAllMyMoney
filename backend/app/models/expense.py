@@ -16,6 +16,7 @@ class Expense(Base):
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=False, index=True)
     subcategory_id = Column(UUID(as_uuid=True), ForeignKey("subcategories.id", ondelete="SET NULL"), nullable=False, index=True)
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"), nullable=True, index=True)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id", ondelete="SET NULL"), nullable=True, index=True)
 
     amount = Column(Numeric(15, 2), nullable=False)
     memo = Column(Text, nullable=True)
@@ -30,3 +31,4 @@ class Expense(Base):
     category = relationship("Category", back_populates="expenses")
     subcategory = relationship("Subcategory", back_populates="expenses")
     product = relationship("Product", back_populates="expenses")
+    store = relationship("Store", back_populates="expenses")

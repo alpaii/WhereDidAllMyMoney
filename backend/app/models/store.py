@@ -18,3 +18,4 @@ class Store(Base):
 
     # Relationships
     user = relationship("User", back_populates="stores")
+    expenses = relationship("Expense", back_populates="store")

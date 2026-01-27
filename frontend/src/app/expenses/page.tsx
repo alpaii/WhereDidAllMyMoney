@@ -23,6 +23,7 @@ import {
 import { useExpenses } from '@/hooks/useExpenses';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories, useProducts } from '@/hooks/useCategories';
+import { useStores } from '@/hooks/useStores';
 import { formatCurrency, formatDateTime, toSeoulDateTimeLocal, getSeoulNow } from '@/lib/utils';
 import type { Expense } from '@/types';
 
@@ -33,6 +34,7 @@ const expenseSchema = z.object({
   product_id: z.string().min(1, '상품을 선택하세요'),
   amount: z.string(),
   memo: z.string().optional(),
+  store_id: z.string().optional(),
   purchase_url: z.string().url('올바른 URL을 입력하세요').optional().or(z.literal('')),
   expense_at: z.string().optional(),
 });
@@ -91,6 +93,7 @@ export default function ExpensesPage() {
   const { accounts } = useAccounts();
   const { categories } = useCategories();
   const { products } = useProducts();
+  const { stores } = useStores();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
 
@@ -262,6 +265,7 @@ export default function ExpensesPage() {
       product_id: '',
       amount: '',
       memo: '',
+      store_id: '',
       purchase_url: '',
       expense_at: getSeoulNow(),
     });
@@ -279,6 +283,7 @@ export default function ExpensesPage() {
       product_id: expense.product_id || '',
       amount: Math.round(Number(expense.amount)).toLocaleString('ko-KR'),
       memo: expense.memo || '',
+      store_id: expense.store_id || '',
       purchase_url: expense.purchase_url || '',
       expense_at: toSeoulDateTimeLocal(expense.expense_at),
     });
@@ -301,6 +306,7 @@ export default function ExpensesPage() {
         category_id: data.category_id,
         subcategory_id: data.subcategory_id,
         product_id: data.product_id,
+        store_id: data.store_id || null,
         amount: parseFloat(data.amount.replace(/,/g, '')) || 0,
         memo: data.memo || null,
         purchase_url: data.purchase_url || null,
@@ -349,6 +355,7 @@ export default function ExpensesPage() {
         category_id: expense.category_id,
         subcategory_id: expense.subcategory_id,
         product_id: expense.product_id,
+        store_id: expense.store_id || null,
         amount: Number(expense.amount),
         memo: expense.memo || null,
         purchase_url: expense.purchase_url || null,
@@ -837,6 +844,17 @@ export default function ExpensesPage() {
               placeholder="예: 점심 식사"
               error={errors.memo?.message}
               {...register('memo')}
+            />
+
+            <Select
+              id="store_id"
+              label="매장 (선택)"
+              options={[
+                { value: '', label: '매장 선택' },
+                ...stores.map((store) => ({ value: store.id, label: store.name })),
+              ]}
+              error={errors.store_id?.message}
+              {...register('store_id')}
             />
 
             <Input

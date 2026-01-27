@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.account import Account
 from app.models.category import Category, Subcategory, Product
 from app.models.expense import Expense
+from app.models.store import Store
 from app.schemas.expense import (
     ExpenseCreate, ExpenseUpdate, ExpenseResponse, ExpenseWithDetails,
     ExpenseStatsByCategory, ExpenseStatsByPeriod, ExpenseSummary,
@@ -60,7 +61,8 @@ async def get_expenses(
             selectinload(Expense.account),
             selectinload(Expense.category),
             selectinload(Expense.subcategory),
-            selectinload(Expense.product)
+            selectinload(Expense.product),
+            selectinload(Expense.store)
         )
         .order_by(Expense.expense_at.desc())
         .offset(offset)
@@ -81,6 +83,7 @@ async def get_expenses(
             category_id=exp.category_id,
             subcategory_id=exp.subcategory_id,
             product_id=exp.product_id,
+            store_id=exp.store_id,
             amount=exp.amount,
             memo=exp.memo,
             purchase_url=exp.purchase_url,
@@ -90,7 +93,8 @@ async def get_expenses(
             account_name=exp.account.name if exp.account else None,
             category_name=exp.category.name if exp.category else None,
             subcategory_name=exp.subcategory.name if exp.subcategory else None,
-            product_name=exp.product.name if exp.product else None
+            product_name=exp.product.name if exp.product else None,
+            store_name=exp.store.name if exp.store else None
         )
         for exp in expenses
     ]
@@ -159,6 +163,20 @@ async def create_expense(
                 detail="Product not found"
             )
 
+    # Verify store if provided
+    if expense_data.store_id:
+        result = await db.execute(
+            select(Store).where(
+                Store.id == expense_data.store_id,
+                Store.user_id == current_user.id
+            )
+        )
+        if not result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Store not found"
+            )
+
     # Create expense
     expense = Expense(
         user_id=current_user.id,
@@ -166,6 +184,7 @@ async def create_expense(
         category_id=expense_data.category_id,
         subcategory_id=expense_data.subcategory_id,
         product_id=expense_data.product_id,
+        store_id=expense_data.store_id,
         amount=expense_data.amount,
         memo=expense_data.memo,
         purchase_url=expense_data.purchase_url,
@@ -199,7 +218,8 @@ async def get_expense(
             selectinload(Expense.account),
             selectinload(Expense.category),
             selectinload(Expense.subcategory),
-            selectinload(Expense.product)
+            selectinload(Expense.product),
+            selectinload(Expense.store)
         )
     )
     expense = result.scalar_one_or_none()
@@ -217,6 +237,7 @@ async def get_expense(
         category_id=expense.category_id,
         subcategory_id=expense.subcategory_id,
         product_id=expense.product_id,
+        store_id=expense.store_id,
         amount=expense.amount,
         memo=expense.memo,
         purchase_url=expense.purchase_url,
@@ -226,7 +247,8 @@ async def get_expense(
         account_name=expense.account.name if expense.account else None,
         category_name=expense.category.name if expense.category else None,
         subcategory_name=expense.subcategory.name if expense.subcategory else None,
-        product_name=expense.product.name if expense.product else None
+        product_name=expense.product.name if expense.product else None,
+        store_name=expense.store.name if expense.store else None
     )
 
 

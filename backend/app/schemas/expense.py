@@ -19,6 +19,7 @@ class ExpenseCreate(ExpenseBase):
     category_id: UUID
     subcategory_id: UUID
     product_id: UUID
+    store_id: Optional[UUID] = None
 
 
 # Update
@@ -27,6 +28,7 @@ class ExpenseUpdate(BaseModel):
     category_id: Optional[UUID] = None
     subcategory_id: Optional[UUID] = None
     product_id: Optional[UUID] = None
+    store_id: Optional[UUID] = None
     amount: Optional[Decimal] = None
     memo: Optional[str] = None
     purchase_url: Optional[str] = Field(None, max_length=2048)
@@ -41,6 +43,7 @@ class ExpenseResponse(ExpenseBase):
     category_id: UUID
     subcategory_id: UUID
     product_id: Optional[UUID]
+    store_id: Optional[UUID]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -53,6 +56,7 @@ class ExpenseWithDetails(ExpenseResponse):
     category_name: Optional[str] = None
     subcategory_name: Optional[str] = None
     product_name: Optional[str] = None
+    store_name: Optional[str] = None
 
 
 # Paginated response
