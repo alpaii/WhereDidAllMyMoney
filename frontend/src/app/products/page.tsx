@@ -467,14 +467,6 @@ export default function ProductsPage() {
           size="lg"
         >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Select
-              id="default_account_id"
-              label="계좌"
-              options={accountOptions}
-              error={errors.default_account_id?.message}
-              {...register('default_account_id')}
-            />
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 id="category_id"
@@ -501,13 +493,23 @@ export default function ProductsPage() {
               {...register('name')}
             />
 
-            <Input
-              id="default_price"
-              type="text"
-              label="기본 가격 (선택)"
-              error={errors.default_price?.message}
-              {...register('default_price', { onChange: handlePriceChange })}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                id="default_price"
+                type="text"
+                label="기본 가격 (선택)"
+                error={errors.default_price?.message}
+                {...register('default_price', { onChange: handlePriceChange })}
+              />
+
+              <Select
+                id="default_account_id"
+                label="계좌"
+                options={accountOptions}
+                error={errors.default_account_id?.message}
+                {...register('default_account_id')}
+              />
+            </div>
 
             <Input
               id="memo"
