@@ -78,12 +78,12 @@ class CategoryWithSubcategories(CategoryResponse):
 class ProductBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     default_price: Optional[Decimal] = None
-    default_account_id: Optional[UUID] = None
     memo: Optional[str] = Field(None, max_length=1000)
 
 
 class ProductCreate(ProductBase):
     subcategory_id: UUID
+    default_account_id: UUID
 
 
 class ProductUpdate(BaseModel):
@@ -98,6 +98,7 @@ class ProductResponse(ProductBase):
     id: UUID
     subcategory_id: UUID
     user_id: UUID
+    default_account_id: Optional[UUID] = None
     is_favorite: bool = False
     created_at: datetime
     updated_at: Optional[datetime]

@@ -108,7 +108,7 @@ export interface ProductCreate {
   name: string;
   subcategory_id: string;
   default_price?: number | null;
-  default_account_id?: string | null;
+  default_account_id: string;
   memo?: string | null;
 }
 

@@ -30,7 +30,7 @@ const productSchema = z.object({
   subcategory_id: z.string().min(1, '서브카테고리를 선택하세요'),
   name: z.string().min(1, '상품명을 입력하세요'),
   default_price: z.string().optional(),
-  default_account_id: z.string().optional(),
+  default_account_id: z.string().min(1, '계좌를 선택하세요'),
   memo: z.string().optional(),
 });
 
@@ -157,7 +157,7 @@ export default function ProductsPage() {
         default_price: data.default_price
           ? parseFloat(data.default_price.replace(/,/g, ''))
           : null,
-        default_account_id: data.default_account_id || null,
+        default_account_id: data.default_account_id,
         memo: data.memo || null,
       };
 
@@ -196,7 +196,7 @@ export default function ProductsPage() {
   ];
 
   const accountOptions = [
-    { value: '', label: '기본 계좌 선택 (선택사항)' },
+    { value: '', label: '계좌 선택' },
     ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
   ];
 
@@ -427,7 +427,7 @@ export default function ProductsPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Select
               id="default_account_id"
-              label="기본 계좌 (선택)"
+              label="계좌"
               options={accountOptions}
               error={errors.default_account_id?.message}
               {...register('default_account_id')}
