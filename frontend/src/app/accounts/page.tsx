@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, GripVertical, Check } from 'lucide-react';
+import { Plus, Pencil, GripVertical, Check } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -80,11 +80,9 @@ const formatAmountWithComma = (value: string) => {
 function SortableAccountItem({
   account,
   onEdit,
-  onDelete,
 }: {
   account: Account;
   onEdit: (account: Account) => void;
-  onDelete: (id: string) => void;
 }) {
   const {
     attributes,
@@ -145,12 +143,6 @@ function SortableAccountItem({
             className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg"
           >
             <Pencil size={18} />
-          </button>
-          <button
-            onClick={() => onDelete(account.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-          >
-            <Trash2 size={18} />
           </button>
         </div>
       </div>
@@ -346,7 +338,6 @@ export default function AccountsPage() {
                         key={account.id}
                         account={account}
                         onEdit={openEditModal}
-                        onDelete={handleDelete}
                       />
                     ))}
                   </div>
@@ -419,13 +410,29 @@ export default function AccountsPage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <Button type="button" variant="secondary" onClick={handleClose}>
-                취소
-              </Button>
-              <Button type="submit" isLoading={isSubmitting}>
-                {editingAccount ? '수정' : '추가'}
-              </Button>
+            <div className="flex justify-between mt-6">
+              {editingAccount ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingAccount.id);
+                    handleClose();
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button type="submit" isLoading={isSubmitting}>
+                  {editingAccount ? '수정' : '추가'}
+                </Button>
+              </div>
             </div>
           </form>
         </Modal>

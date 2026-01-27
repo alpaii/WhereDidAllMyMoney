@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, Star, ShoppingCart } from 'lucide-react';
+import { Plus, Pencil, Star, ShoppingCart } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -370,12 +370,6 @@ export default function ProductsPage() {
                       >
                         <Pencil size={16} />
                       </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="p-1 text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
                     </div>
                   </div>
                   {product.memo && (
@@ -455,12 +449,6 @@ export default function ProductsPage() {
                           >
                             <Pencil size={16} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(product.id)}
-                            className="p-1 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 size={16} />
-                          </button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -528,13 +516,29 @@ export default function ProductsPage() {
               {...register('memo')}
             />
 
-            <div className="flex justify-end gap-3 mt-6">
-              <Button type="button" variant="secondary" onClick={handleClose}>
-                취소
-              </Button>
-              <Button type="submit" isLoading={isSubmitting}>
-                {editingProduct ? '수정' : '추가'}
-              </Button>
+            <div className="flex justify-between mt-6">
+              {editingProduct ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingProduct.id);
+                    handleClose();
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button type="submit" isLoading={isSubmitting}>
+                  {editingProduct ? '수정' : '추가'}
+                </Button>
+              </div>
             </div>
           </form>
         </Modal>

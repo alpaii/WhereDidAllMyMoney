@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, GripVertical, Pencil } from 'lucide-react';
+import { Plus, GripVertical, Pencil } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -36,11 +36,9 @@ type StoreForm = z.infer<typeof storeSchema>;
 function SortableStoreItem({
   store,
   onEdit,
-  onDelete,
 }: {
   store: Store;
   onEdit: (store: Store) => void;
-  onDelete: (id: string) => void;
 }) {
   const {
     attributes,
@@ -80,13 +78,6 @@ function SortableStoreItem({
           title="이름 변경"
         >
           <Pencil size={18} />
-        </button>
-        <button
-          onClick={() => onDelete(store.id)}
-          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-          title="삭제"
-        >
-          <Trash2 size={18} />
         </button>
       </div>
     </div>
@@ -221,7 +212,6 @@ export default function StoresPage() {
                         key={store.id}
                         store={store}
                         onEdit={openEditModal}
-                        onDelete={handleDelete}
                       />
                     ))}
                   </div>
@@ -247,20 +237,37 @@ export default function StoresPage() {
               error={form.formState.errors.name?.message}
               {...form.register('name')}
             />
-            <div className="flex justify-end gap-3 mt-6">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setEditingStore(null);
-                }}
-              >
-                취소
-              </Button>
-              <Button type="submit" isLoading={isSubmitting}>
-                {editingStore ? '수정' : '추가'}
-              </Button>
+            <div className="flex justify-between mt-6">
+              {editingStore ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingStore.id);
+                    setIsModalOpen(false);
+                    setEditingStore(null);
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingStore(null);
+                  }}
+                >
+                  취소
+                </Button>
+                <Button type="submit" isLoading={isSubmitting}>
+                  {editingStore ? '수정' : '추가'}
+                </Button>
+              </div>
             </div>
           </form>
         </Modal>

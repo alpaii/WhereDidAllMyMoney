@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronDown, ChevronRight, Plus, Trash2, X, GripVertical, Pencil } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, GripVertical, Pencil } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -41,11 +41,9 @@ type SubcategoryForm = z.infer<typeof subcategorySchema>;
 function SortableSubcategoryItem({
   subcategory,
   onEditSubcategory,
-  onDeleteSubcategory,
 }: {
   subcategory: Subcategory;
   onEditSubcategory: (subcategory: Subcategory) => void;
-  onDeleteSubcategory: (id: string) => void;
 }) {
   const {
     attributes,
@@ -86,13 +84,6 @@ function SortableSubcategoryItem({
         >
           <Pencil size={14} />
         </button>
-        <button
-          onClick={() => onDeleteSubcategory(subcategory.id)}
-          className="p-1 text-red-500 hover:text-red-700"
-          title="삭제"
-        >
-          <X size={14} />
-        </button>
       </div>
     </div>
   );
@@ -103,10 +94,8 @@ function SortableCategoryItem({
   isOpen,
   onToggleOpen,
   onEditCategory,
-  onDeleteCategory,
   onAddSubcategory,
   onEditSubcategory,
-  onDeleteSubcategory,
   onSubcategoryDragEnd,
   subcategorySensors,
 }: {
@@ -114,10 +103,8 @@ function SortableCategoryItem({
   isOpen: boolean;
   onToggleOpen: () => void;
   onEditCategory: (category: Category) => void;
-  onDeleteCategory: (id: string) => void;
   onAddSubcategory: (categoryId: string) => void;
   onEditSubcategory: (subcategory: Subcategory) => void;
-  onDeleteSubcategory: (id: string) => void;
   onSubcategoryDragEnd: (categoryId: string, event: DragEndEvent) => void;
   subcategorySensors: ReturnType<typeof useSensors>;
 }) {
@@ -167,13 +154,6 @@ function SortableCategoryItem({
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => onEditCategory(category)}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-            title="이름 변경"
-          >
-            <Pencil size={18} />
-          </button>
-          <button
             onClick={() => onAddSubcategory(category.id)}
             className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
             title="서브카테고리 추가"
@@ -181,11 +161,11 @@ function SortableCategoryItem({
             <Plus size={18} />
           </button>
           <button
-            onClick={() => onDeleteCategory(category.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-            title="카테고리 삭제"
+            onClick={() => onEditCategory(category)}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            title="이름 변경"
           >
-            <Trash2 size={18} />
+            <Pencil size={18} />
           </button>
         </div>
       </div>
@@ -207,7 +187,6 @@ function SortableCategoryItem({
                       key={sub.id}
                       subcategory={sub}
                       onEditSubcategory={onEditSubcategory}
-                      onDeleteSubcategory={onDeleteSubcategory}
                     />
                   ))}
                 </div>
@@ -455,10 +434,8 @@ export default function CategoriesPage() {
                         isOpen={openCategories.has(category.id)}
                         onToggleOpen={() => toggleCategory(category.id)}
                         onEditCategory={openEditCategoryModal}
-                        onDeleteCategory={handleDeleteCategory}
                         onAddSubcategory={openSubcategoryModal}
                         onEditSubcategory={openEditSubcategoryModal}
-                        onDeleteSubcategory={handleDeleteSubcategory}
                         onSubcategoryDragEnd={handleSubcategoryDragEnd}
                         subcategorySensors={subcategorySensors}
                       />
@@ -486,20 +463,37 @@ export default function CategoriesPage() {
               error={categoryForm.formState.errors.name?.message}
               {...categoryForm.register('name')}
             />
-            <div className="flex justify-end gap-3 mt-6">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setIsCategoryModalOpen(false);
-                  setEditingCategory(null);
-                }}
-              >
-                취소
-              </Button>
-              <Button type="submit" isLoading={isSubmitting}>
-                {editingCategory ? '수정' : '추가'}
-              </Button>
+            <div className="flex justify-between mt-6">
+              {editingCategory ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDeleteCategory(editingCategory.id);
+                    setIsCategoryModalOpen(false);
+                    setEditingCategory(null);
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsCategoryModalOpen(false);
+                    setEditingCategory(null);
+                  }}
+                >
+                  취소
+                </Button>
+                <Button type="submit" isLoading={isSubmitting}>
+                  {editingCategory ? '수정' : '추가'}
+                </Button>
+              </div>
             </div>
           </form>
         </Modal>
@@ -520,20 +514,37 @@ export default function CategoriesPage() {
               error={subcategoryForm.formState.errors.name?.message}
               {...subcategoryForm.register('name')}
             />
-            <div className="flex justify-end gap-3 mt-6">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setIsSubcategoryModalOpen(false);
-                  setEditingSubcategory(null);
-                }}
-              >
-                취소
-              </Button>
-              <Button type="submit" isLoading={isSubmitting}>
-                {editingSubcategory ? '수정' : '추가'}
-              </Button>
+            <div className="flex justify-between mt-6">
+              {editingSubcategory ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDeleteSubcategory(editingSubcategory.id);
+                    setIsSubcategoryModalOpen(false);
+                    setEditingSubcategory(null);
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsSubcategoryModalOpen(false);
+                    setEditingSubcategory(null);
+                  }}
+                >
+                  취소
+                </Button>
+                <Button type="submit" isLoading={isSubmitting}>
+                  {editingSubcategory ? '수정' : '추가'}
+                </Button>
+              </div>
             </div>
           </form>
         </Modal>

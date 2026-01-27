@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, ArrowRight, Trash2, Pencil } from 'lucide-react';
+import { Plus, ArrowRight, Pencil } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -222,12 +222,6 @@ export default function TransfersPage() {
                         >
                           <Pencil size={16} />
                         </button>
-                        <button
-                          onClick={() => handleDelete(transfer.id)}
-                          className="p-1 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -285,12 +279,6 @@ export default function TransfersPage() {
                             className="p-1 text-gray-500 hover:text-primary-600"
                           >
                             <Pencil size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(transfer.id)}
-                            className="p-1 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 size={16} />
                           </button>
                         </div>
                       </TableCell>
@@ -371,13 +359,29 @@ export default function TransfersPage() {
               {...register('memo')}
             />
 
-            <div className="flex justify-end gap-3 mt-6">
-              <Button type="button" variant="secondary" onClick={handleClose}>
-                취소
-              </Button>
-              <Button type="submit" isLoading={isSubmitting}>
-                {editingTransfer ? '수정' : '이체'}
-              </Button>
+            <div className="flex justify-between mt-6">
+              {editingTransfer ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingTransfer.id);
+                    handleClose();
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button type="submit" isLoading={isSubmitting}>
+                  {editingTransfer ? '수정' : '이체'}
+                </Button>
+              </div>
             </div>
           </form>
         </Modal>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -666,12 +666,6 @@ export default function ExpensesPage() {
                         >
                           <Pencil size={16} />
                         </button>
-                        <button
-                          onClick={() => handleDelete(expense.id)}
-                          className="p-1 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -776,12 +770,6 @@ export default function ExpensesPage() {
                             className="p-1 text-gray-500 hover:text-primary-600"
                           >
                             <Pencil size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(expense.id)}
-                            className="p-1 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 size={16} />
                           </button>
                         </div>
                       </TableCell>
@@ -910,13 +898,29 @@ export default function ExpensesPage() {
               {...register('purchase_url')}
             />
 
-            <div className="flex justify-end gap-3 mt-6">
-              <Button type="button" variant="secondary" onClick={handleClose}>
-                취소
-              </Button>
-              <Button type="submit" isLoading={isSubmitting}>
-                {editingExpense ? '수정' : '추가'}
-              </Button>
+            <div className="flex justify-between mt-6">
+              {editingExpense ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingExpense.id);
+                    handleClose();
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button type="submit" isLoading={isSubmitting}>
+                  {editingExpense ? '수정' : '추가'}
+                </Button>
+              </div>
             </div>
           </form>
         </Modal>
