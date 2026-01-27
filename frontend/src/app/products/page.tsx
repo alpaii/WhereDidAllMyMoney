@@ -21,6 +21,7 @@ import {
   TableCell,
 } from '@/components/ui';
 import { useProducts, useCategories } from '@/hooks/useCategories';
+import { useAccounts } from '@/hooks/useAccounts';
 import { formatCurrency } from '@/lib/utils';
 import type { Product } from '@/types';
 
@@ -29,6 +30,7 @@ const productSchema = z.object({
   subcategory_id: z.string().min(1, '서브카테고리를 선택하세요'),
   name: z.string().min(1, '상품명을 입력하세요'),
   default_price: z.string().optional(),
+  default_account_id: z.string().optional(),
   memo: z.string().optional(),
 });
 
@@ -38,6 +40,7 @@ export default function ProductsPage() {
   const { products, isLoading, fetchProducts, createProduct, updateProduct, deleteProduct, toggleFavorite } =
     useProducts();
   const { categories } = useCategories();
+  const { accounts } = useAccounts();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // 필터 상태
@@ -110,6 +113,7 @@ export default function ProductsPage() {
       subcategory_id: '',
       name: '',
       default_price: '',
+      default_account_id: '',
       memo: '',
     });
     setIsModalOpen(true);
@@ -131,6 +135,7 @@ export default function ProductsPage() {
       default_price: product.default_price
         ? Math.round(Number(product.default_price)).toLocaleString('ko-KR')
         : '',
+      default_account_id: product.default_account_id || '',
       memo: product.memo || '',
     });
     setIsModalOpen(true);
@@ -152,6 +157,7 @@ export default function ProductsPage() {
         default_price: data.default_price
           ? parseFloat(data.default_price.replace(/,/g, ''))
           : null,
+        default_account_id: data.default_account_id || null,
         memo: data.memo || null,
       };
 
@@ -189,6 +195,11 @@ export default function ProductsPage() {
     ...subcategories.map((sub) => ({ value: sub.id, label: sub.name })),
   ];
 
+  const accountOptions = [
+    { value: '', label: '기본 계좌 선택 (선택사항)' },
+    ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
+  ];
+
   // 필터용 옵션
   const filterCategoryOptions = [
     { value: '', label: '전체 카테고리' },
@@ -214,6 +225,25 @@ export default function ProductsPage() {
       }
     }
     return '미분류';
+  };
+
+  // 계좌 배지 렌더링 함수
+  const renderAccountBadge = (accountId: string | undefined) => {
+    if (!accountId) return <span className="text-gray-400">-</span>;
+    const account = accounts.find(a => a.id === accountId);
+    if (!account) return <span className="text-gray-400">-</span>;
+
+    if (account.badge_color) {
+      return (
+        <span
+          className="px-2 py-0.5 rounded text-xs font-medium text-white"
+          style={{ backgroundColor: account.badge_color }}
+        >
+          {account.name}
+        </span>
+      );
+    }
+    return <span className="text-sm text-gray-500">{account.name}</span>;
   };
 
   return (
@@ -318,24 +348,25 @@ export default function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">★</TableHead>
-                  <TableHead>상품명</TableHead>
-                  <TableHead>카테고리</TableHead>
-                  <TableHead>기본 가격</TableHead>
-                  <TableHead>메모</TableHead>
-                  <TableHead className="text-right">작업</TableHead>
+                  <TableHead className="w-1/12">★</TableHead>
+                  <TableHead className="w-1/12">계좌</TableHead>
+                  <TableHead className="w-1/12">카테고리</TableHead>
+                  <TableHead className="w-1/12 text-right">가격</TableHead>
+                  <TableHead className="w-3/12">상품명</TableHead>
+                  <TableHead className="w-4/12">메모</TableHead>
+                  <TableHead className="w-1/12 text-right">작업</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       로딩 중...
                     </TableCell>
                   </TableRow>
                 ) : filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                       {products.length === 0 ? '등록된 상품이 없습니다' : '검색 결과가 없습니다'}
                     </TableCell>
                   </TableRow>
@@ -353,14 +384,15 @@ export default function ProductsPage() {
                           />
                         </button>
                       </TableCell>
-                      <TableCell className="font-semibold">{product.name}</TableCell>
-                      <TableCell>{getSubcategoryName(product.subcategory_id)}</TableCell>
-                      <TableCell className="font-mono">
+                      <TableCell>{renderAccountBadge(product.default_account_id)}</TableCell>
+                      <TableCell className="break-words whitespace-normal">{getSubcategoryName(product.subcategory_id)}</TableCell>
+                      <TableCell className="font-mono text-right">
                         {product.default_price
                           ? formatCurrency(Number(product.default_price))
                           : '-'}
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">{product.memo || '-'}</TableCell>
+                      <TableCell className="font-semibold break-words whitespace-normal">{product.name}</TableCell>
+                      <TableCell className="break-words whitespace-normal">{product.memo || '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -393,6 +425,14 @@ export default function ProductsPage() {
           size="lg"
         >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Select
+              id="default_account_id"
+              label="기본 계좌 (선택)"
+              options={accountOptions}
+              error={errors.default_account_id?.message}
+              {...register('default_account_id')}
+            />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 id="category_id"

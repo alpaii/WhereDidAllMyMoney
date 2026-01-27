@@ -43,6 +43,7 @@ class Product(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     subcategory_id = Column(UUID(as_uuid=True), ForeignKey("subcategories.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    default_account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True)
     name = Column(String(200), nullable=False)
     default_price = Column(String(15), nullable=True)  # 자주 사용하는 가격
     memo = Column(String(1000), nullable=True)
@@ -53,4 +54,5 @@ class Product(Base):
     # Relationships
     subcategory = relationship("Subcategory", back_populates="products")
     user = relationship("User", back_populates="products")
+    default_account = relationship("Account", foreign_keys=[default_account_id])
     expenses = relationship("Expense", back_populates="product")

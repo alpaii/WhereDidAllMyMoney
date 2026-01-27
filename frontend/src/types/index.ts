@@ -97,6 +97,7 @@ export interface Product {
   name: string;
   subcategory_id: string;
   default_price?: number;
+  default_account_id?: string;
   memo?: string;
   is_favorite: boolean;
   created_at: string;
@@ -107,6 +108,7 @@ export interface ProductCreate {
   name: string;
   subcategory_id: string;
   default_price?: number | null;
+  default_account_id?: string | null;
   memo?: string | null;
 }
 

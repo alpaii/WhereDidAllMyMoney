@@ -374,6 +374,7 @@ async def create_product(
         user_id=current_user.id,
         name=product_data.name,
         default_price=str(product_data.default_price) if product_data.default_price else None,
+        default_account_id=product_data.default_account_id,
         memo=product_data.memo
     )
     db.add(product)

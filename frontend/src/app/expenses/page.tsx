@@ -213,7 +213,7 @@ export default function ExpensesPage() {
   // 선택된 서브카테고리의 상품 목록
   const filteredProducts = products.filter(p => p.subcategory_id === selectedSubcategoryId);
 
-  // 상품 선택 시 가격 자동 입력
+  // 상품 선택 시 가격 및 계좌 자동 입력
   const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const productId = e.target.value;
     if (productId) {
@@ -221,6 +221,9 @@ export default function ExpensesPage() {
       if (product?.default_price) {
         const formatted = Math.round(product.default_price).toLocaleString('ko-KR');
         setValue('amount', formatted);
+      }
+      if (product?.default_account_id) {
+        setValue('account_id', product.default_account_id);
       }
     }
   };
