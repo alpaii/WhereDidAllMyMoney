@@ -8,6 +8,7 @@ from uuid import UUID
 from app.db.database import get_db
 from app.models.user import User
 from app.models.category import Category, Subcategory, Product
+from app.models.expense import Expense
 from app.schemas.category import (
     CategoryCreate, CategoryUpdate, CategoryResponse, CategoryWithSubcategories,
     CategoryOrderUpdate,
@@ -141,6 +142,18 @@ async def delete_category(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found"
+        )
+
+    # Check if any subcategory has products
+    product_count = await db.execute(
+        select(func.count(Product.id))
+        .join(Subcategory, Product.subcategory_id == Subcategory.id)
+        .where(Subcategory.category_id == category_id)
+    )
+    if product_count.scalar() > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="상품이 등록된 카테고리는 삭제할 수 없습니다"
         )
 
     await db.delete(category)
@@ -438,6 +451,16 @@ async def delete_product(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found"
+        )
+
+    # Check if product has expenses
+    expense_count = await db.execute(
+        select(func.count(Expense.id)).where(Expense.product_id == product_id)
+    )
+    if expense_count.scalar() > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="지출내역이 등록된 상품은 삭제할 수 없습니다"
         )
 
     await db.delete(product)

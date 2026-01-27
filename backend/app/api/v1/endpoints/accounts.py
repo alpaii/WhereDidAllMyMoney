@@ -8,6 +8,8 @@ from decimal import Decimal
 from app.db.database import get_db
 from app.models.user import User
 from app.models.account import Account, AccountType
+from app.models.expense import Expense
+from app.models.category import Product
 from app.schemas.account import (
     AccountCreate, AccountUpdate, AccountResponse, AccountBalanceSummary, AccountOrderUpdate
 )
@@ -180,6 +182,26 @@ async def delete_account(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Account not found"
+        )
+
+    # Check if account has expenses
+    expense_count = await db.execute(
+        select(func.count(Expense.id)).where(Expense.account_id == account_id)
+    )
+    if expense_count.scalar() > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="지출내역이 등록된 계좌는 삭제할 수 없습니다"
+        )
+
+    # Check if account is used as default account in products
+    product_count = await db.execute(
+        select(func.count(Product.id)).where(Product.default_account_id == account_id)
+    )
+    if product_count.scalar() > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="상품에 기본 계좌로 등록된 계좌는 삭제할 수 없습니다"
         )
 
     await db.delete(account)
