@@ -63,11 +63,13 @@ export default function StatisticsPage() {
     date: d.date.slice(8, 10) + '일',
     amount: d.total_amount,
   }));
+  const dailyMax = Math.max(...dailyChartData.map((d) => d.amount), 0) * 1.2;
 
   const monthlyChartData = monthlyExpenses.map((m) => ({
     month: m.period.slice(5, 7) + '월',
     amount: m.total_amount,
   }));
+  const monthlyMax = Math.max(...monthlyChartData.map((m) => m.amount), 0) * 1.2;
 
   return (
     <DashboardLayout title="통계">
@@ -103,7 +105,7 @@ export default function StatisticsPage() {
             <CardContent className="p-6 text-center">
               <p className="text-sm text-gray-600">일 평균</p>
               <p className="text-2xl font-bold text-gray-800 mt-1">
-                {formatCurrency(monthlySummary?.daily_average || 0)}
+                {formatCurrency(Math.round(monthlySummary?.daily_average || 0))}
               </p>
             </CardContent>
           </Card>
@@ -139,6 +141,7 @@ export default function StatisticsPage() {
                       <YAxis
                         tick={{ fontSize: 12 }}
                         tickFormatter={(value) => `${Math.floor(value / 10000)}만`}
+                        domain={[0, dailyMax]}
                       />
                       <Tooltip
                         formatter={(value: number) => [formatCurrency(value), '지출']}
@@ -146,8 +149,9 @@ export default function StatisticsPage() {
                       <Bar dataKey="amount" fill="#3B82F6" radius={[4, 4, 0, 0]}>
                         <LabelList
                           dataKey="amount"
-                          position="top"
-                          fontSize={20}
+                          position="insideTop"
+                          fontSize={16}
+                          fill="#fff"
                           formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
                         />
                       </Bar>
@@ -179,6 +183,7 @@ export default function StatisticsPage() {
                       <YAxis
                         tick={{ fontSize: 12 }}
                         tickFormatter={(value) => `${Math.floor(value / 10000)}만`}
+                        domain={[0, monthlyMax]}
                       />
                       <Tooltip
                         formatter={(value: number) => [formatCurrency(value), '지출']}
@@ -186,8 +191,9 @@ export default function StatisticsPage() {
                       <Bar dataKey="amount" fill="#10B981" radius={[4, 4, 0, 0]}>
                         <LabelList
                           dataKey="amount"
-                          position="top"
-                          fontSize={20}
+                          position="insideTop"
+                          fontSize={16}
+                          fill="#fff"
                           formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
                         />
                       </Bar>
