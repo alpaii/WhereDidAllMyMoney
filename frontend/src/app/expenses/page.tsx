@@ -846,7 +846,6 @@ export default function ExpensesPage() {
             <Input
               id="memo"
               label="메모 (선택)"
-              placeholder="예: 점심 식사"
               error={errors.memo?.message}
               {...register('memo')}
             />
@@ -870,7 +869,7 @@ export default function ExpensesPage() {
               {...register('purchase_url')}
             />
 
-            <div className="flex justify-between items-center mt-6">
+            <div className="flex justify-between items-center -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingExpense ? (
                 <Button
                   type="button"

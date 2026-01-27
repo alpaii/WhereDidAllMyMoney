@@ -463,7 +463,7 @@ export default function CategoriesPage() {
               error={categoryForm.formState.errors.name?.message}
               {...categoryForm.register('name')}
             />
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingCategory ? (
                 <Button
                   type="button"
@@ -514,7 +514,7 @@ export default function CategoriesPage() {
               error={subcategoryForm.formState.errors.name?.message}
               {...subcategoryForm.register('name')}
             />
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingSubcategory ? (
                 <Button
                   type="button"

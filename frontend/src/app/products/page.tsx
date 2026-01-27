@@ -516,7 +516,7 @@ export default function ProductsPage() {
               {...register('memo')}
             />
 
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingProduct ? (
                 <Button
                   type="button"

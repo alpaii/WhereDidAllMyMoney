@@ -237,7 +237,7 @@ export default function StoresPage() {
               error={form.formState.errors.name?.message}
               {...form.register('name')}
             />
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingStore ? (
                 <Button
                   type="button"
