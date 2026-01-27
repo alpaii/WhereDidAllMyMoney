@@ -18,7 +18,7 @@ class ExpenseCreate(ExpenseBase):
     account_id: UUID
     category_id: UUID
     subcategory_id: UUID
-    product_id: Optional[UUID] = None
+    product_id: UUID
 
 
 # Update

@@ -30,7 +30,7 @@ const expenseSchema = z.object({
   account_id: z.string().min(1, '계좌를 선택하세요'),
   category_id: z.string().min(1, '카테고리를 선택하세요'),
   subcategory_id: z.string().min(1, '서브카테고리를 선택하세요'),
-  product_id: z.string().optional(),
+  product_id: z.string().min(1, '상품을 선택하세요'),
   amount: z.string(),
   memo: z.string().optional(),
   purchase_url: z.string().url('올바른 URL을 입력하세요').optional().or(z.literal('')),
@@ -300,7 +300,7 @@ export default function ExpensesPage() {
         account_id: data.account_id,
         category_id: data.category_id,
         subcategory_id: data.subcategory_id,
-        product_id: data.product_id || null,
+        product_id: data.product_id,
         amount: parseFloat(data.amount.replace(/,/g, '')) || 0,
         memo: data.memo || null,
         purchase_url: data.purchase_url || null,
@@ -339,12 +339,16 @@ export default function ExpensesPage() {
   };
 
   const handleCopy = async (expense: Expense) => {
+    if (!expense.product_id) {
+      alert('상품 정보가 없는 지출은 복사할 수 없습니다.');
+      return;
+    }
     try {
       await createExpense({
         account_id: expense.account_id,
         category_id: expense.category_id,
         subcategory_id: expense.subcategory_id,
-        product_id: expense.product_id || null,
+        product_id: expense.product_id,
         amount: Number(expense.amount),
         memo: expense.memo || null,
         purchase_url: expense.purchase_url || null,
@@ -400,7 +404,7 @@ export default function ExpensesPage() {
   };
 
   const productOptions = [
-    { value: '', label: '상품 선택 (선택사항)' },
+    { value: '', label: '상품 선택' },
     ...filteredProducts.map((product) => ({
       value: product.id,
       label: product.default_price
@@ -802,14 +806,14 @@ export default function ExpensesPage() {
               />
             </div>
 
-            {filteredProducts.length > 0 && (
-              <Select
-                id="product_id"
-                label="상품 (선택사항)"
-                options={productOptions}
-                {...register('product_id', { onChange: handleProductChange })}
-              />
-            )}
+            <Select
+              id="product_id"
+              label="상품"
+              options={productOptions}
+              error={errors.product_id?.message}
+              disabled={!selectedSubcategoryId || filteredProducts.length === 0}
+              {...register('product_id', { onChange: handleProductChange })}
+            />
 
             <Input
               id="amount"

@@ -142,7 +142,7 @@ export interface ExpenseCreate {
   account_id: string;
   category_id: string;
   subcategory_id: string;
-  product_id?: string | null;
+  product_id: string;
   amount: number;
   memo?: string | null;
   purchase_url?: string | null;
