@@ -789,12 +789,12 @@ export default function ExpensesPage() {
           size="lg"
         >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Select
-              id="account_id"
-              label="계좌"
-              options={accountOptions}
-              error={errors.account_id?.message}
-              {...register('account_id')}
+            <Input
+              id="expense_at"
+              type="datetime-local"
+              label="지출 일시"
+              error={errors.expense_at?.message}
+              {...register('expense_at')}
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -825,21 +825,23 @@ export default function ExpensesPage() {
               {...register('product_id', { onChange: handleProductChange })}
             />
 
-            <Input
-              id="amount"
-              type="text"
-              label="금액"
-              error={errors.amount?.message}
-              {...register('amount', { onChange: handleAmountChange })}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                id="amount"
+                type="text"
+                label="금액"
+                error={errors.amount?.message}
+                {...register('amount', { onChange: handleAmountChange })}
+              />
 
-            <Input
-              id="expense_at"
-              type="datetime-local"
-              label="지출 일시"
-              error={errors.expense_at?.message}
-              {...register('expense_at')}
-            />
+              <Select
+                id="account_id"
+                label="계좌"
+                options={accountOptions}
+                error={errors.account_id?.message}
+                {...register('account_id')}
+              />
+            </div>
 
             <Input
               id="memo"
@@ -860,36 +862,6 @@ export default function ExpensesPage() {
               {...register('store_id')}
             />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">만족도 (선택)</label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setModalSatisfaction(modalSatisfaction === true ? null : true)}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-lg border ${
-                    modalSatisfaction === true
-                      ? 'bg-green-50 border-green-500 text-green-700'
-                      : 'border-gray-300 text-gray-500 hover:border-green-400 hover:text-green-600'
-                  }`}
-                >
-                  <ThumbsUp size={18} />
-                  <span>만족</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalSatisfaction(modalSatisfaction === false ? null : false)}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-lg border ${
-                    modalSatisfaction === false
-                      ? 'bg-red-50 border-red-500 text-red-700'
-                      : 'border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-600'
-                  }`}
-                >
-                  <ThumbsDown size={18} />
-                  <span>불만족</span>
-                </button>
-              </div>
-            </div>
-
             <Input
               id="purchase_url"
               label="구매 URL (선택)"
@@ -898,7 +870,7 @@ export default function ExpensesPage() {
               {...register('purchase_url')}
             />
 
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between items-center mt-6">
               {editingExpense ? (
                 <Button
                   type="button"
@@ -913,7 +885,33 @@ export default function ExpensesPage() {
               ) : (
                 <div />
               )}
-              <div className="flex gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setModalSatisfaction(modalSatisfaction === true ? null : true)}
+                    className={`p-2 rounded-lg border ${
+                      modalSatisfaction === true
+                        ? 'bg-green-50 border-green-500 text-green-700'
+                        : 'border-gray-300 text-gray-400 hover:border-green-400 hover:text-green-600'
+                    }`}
+                    title="만족"
+                  >
+                    <ThumbsUp size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalSatisfaction(modalSatisfaction === false ? null : false)}
+                    className={`p-2 rounded-lg border ${
+                      modalSatisfaction === false
+                        ? 'bg-red-50 border-red-500 text-red-700'
+                        : 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-600'
+                    }`}
+                    title="불만족"
+                  >
+                    <ThumbsDown size={20} />
+                  </button>
+                </div>
                 <Button type="button" variant="secondary" onClick={handleClose}>
                   취소
                 </Button>
