@@ -381,6 +381,24 @@ export default function ExpensesPage() {
 
   const subcategoryOptions = subcategories.map((sub) => ({ value: sub.id, label: sub.name }));
 
+  // 상품 메모와 지출 메모를 결합하여 반환
+  const getCombinedMemo = (expense: Expense) => {
+    const product = expense.product_id ? products.find(p => p.id === expense.product_id) : null;
+    const productMemo = product?.memo;
+    const expenseMemo = expense.memo;
+
+    if (productMemo && expenseMemo) {
+      return { productMemo, expenseMemo };
+    }
+    if (productMemo) {
+      return { productMemo, expenseMemo: null };
+    }
+    if (expenseMemo) {
+      return { productMemo: null, expenseMemo };
+    }
+    return { productMemo: null, expenseMemo: null };
+  };
+
   const productOptions = [
     { value: '', label: '상품 선택 (선택사항)' },
     ...filteredProducts.map((product) => ({
@@ -637,11 +655,19 @@ export default function ExpensesPage() {
                       </div>
                     </div>
                   </div>
-                  {expense.memo && (
-                    <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                      {expense.memo}
-                    </p>
-                  )}
+                  {(() => {
+                    const { productMemo, expenseMemo } = getCombinedMemo(expense);
+                    if (productMemo || expenseMemo) {
+                      return (
+                        <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded whitespace-pre-line">
+                          {productMemo && expenseMemo
+                            ? <>{productMemo}<br />{expenseMemo}</>
+                            : productMemo || expenseMemo}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
                 </CardContent>
               </Card>
             ))
@@ -691,7 +717,15 @@ export default function ExpensesPage() {
                         {formatCurrency(Number(expense.amount))}
                       </TableCell>
                       <TableCell className="text-gray-800 font-semibold break-words">{expense.product_name || '-'}</TableCell>
-                      <TableCell className="break-words">{expense.memo || '-'}</TableCell>
+                      <TableCell className="break-words whitespace-pre-line">
+                        {(() => {
+                          const { productMemo, expenseMemo } = getCombinedMemo(expense);
+                          if (productMemo && expenseMemo) {
+                            return <>{productMemo}<br />{expenseMemo}</>;
+                          }
+                          return productMemo || expenseMemo || '-';
+                        })()}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           {expense.purchase_url && (
