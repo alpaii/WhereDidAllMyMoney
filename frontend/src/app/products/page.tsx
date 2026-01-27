@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, ShoppingCart } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -22,7 +23,8 @@ import {
 } from '@/components/ui';
 import { useProducts, useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
-import { formatCurrency } from '@/lib/utils';
+import { useExpenses } from '@/hooks/useExpenses';
+import { formatCurrency, getSeoulNow } from '@/lib/utils';
 import type { Product } from '@/types';
 
 const productSchema = z.object({
@@ -37,10 +39,12 @@ const productSchema = z.object({
 type ProductForm = z.infer<typeof productSchema>;
 
 export default function ProductsPage() {
+  const router = useRouter();
   const { products, isLoading, fetchProducts, createProduct, updateProduct, deleteProduct, toggleFavorite } =
     useProducts();
   const { categories } = useCategories();
   const { accounts } = useAccounts();
+  const { createExpense } = useExpenses();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // 필터 상태
@@ -185,6 +189,42 @@ export default function ProductsPage() {
     }
   };
 
+  // 상품에서 바로 지출 추가
+  const handleQuickAddExpense = async (product: Product) => {
+    if (!product.default_account_id) {
+      alert('계좌가 설정되지 않은 상품입니다.');
+      return;
+    }
+    if (!product.default_price) {
+      alert('가격이 설정되지 않은 상품입니다.');
+      return;
+    }
+
+    // 카테고리 ID 찾기
+    const category = categories.find(cat =>
+      cat.subcategories?.some(sub => sub.id === product.subcategory_id)
+    );
+    if (!category) {
+      alert('카테고리 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      await createExpense({
+        account_id: product.default_account_id,
+        category_id: category.id,
+        subcategory_id: product.subcategory_id,
+        product_id: product.id,
+        amount: Number(product.default_price),
+        expense_at: getSeoulNow(),
+      });
+      router.push('/expenses');
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+      alert('지출 추가에 실패했습니다.');
+    }
+  };
+
   const categoryOptions = [
     { value: '', label: '카테고리 선택' },
     ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
@@ -318,6 +358,13 @@ export default function ProductsPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <button
+                        onClick={() => handleQuickAddExpense(product)}
+                        className="p-1 text-green-600 hover:text-green-800"
+                        title="지출 추가"
+                      >
+                        <ShoppingCart size={16} />
+                      </button>
+                      <button
                         onClick={() => openEditModal(product)}
                         className="p-1 text-gray-500 hover:text-primary-600"
                       >
@@ -395,6 +442,13 @@ export default function ProductsPage() {
                       <TableCell className="break-words whitespace-normal">{product.memo || '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleQuickAddExpense(product)}
+                            className="p-1 text-green-600 hover:text-green-800"
+                            title="지출 추가"
+                          >
+                            <ShoppingCart size={16} />
+                          </button>
                           <button
                             onClick={() => openEditModal(product)}
                             className="p-1 text-gray-500 hover:text-primary-600"
