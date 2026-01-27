@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   Tag,
   Package,
+  Store,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
   { label: '상품 관리', href: '/products', icon: <Package size={20} /> },
   { label: '카테고리 관리', href: '/categories', icon: <Tag size={20} /> },
   { label: '계좌 관리', href: '/accounts', icon: <Wallet size={20} /> },
+  { label: '매장 관리', href: '/stores', icon: <Store size={20} /> },
   { label: '통계', href: '/statistics', icon: <PieChart size={20} /> },
   { label: '설정', href: '/settings', icon: <Settings size={20} /> },
 ];

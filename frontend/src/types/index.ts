@@ -173,6 +173,18 @@ export interface DailyExpense {
   expense_count: number;
 }
 
+// Store types
+export interface Store {
+  id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface StoreCreate {
+  name: string;
+}
+
 // Pagination
 export interface PaginatedResponse<T> {
   items: T[];
