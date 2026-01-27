@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import Column, String, DateTime, ForeignKey, Numeric, Text
+from sqlalchemy import Column, String, DateTime, ForeignKey, Numeric, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.database import Base
@@ -21,6 +21,7 @@ class Expense(Base):
     amount = Column(Numeric(15, 2), nullable=False)
     memo = Column(Text, nullable=True)
     purchase_url = Column(String(2048), nullable=True)  # 온라인 구매 URL
+    satisfaction = Column(Boolean, nullable=True)  # True=만족, False=불만족, None=미평가
     expense_at = Column(DateTime, nullable=False, index=True)  # 지출 시간
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

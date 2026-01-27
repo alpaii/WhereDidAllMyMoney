@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, ExternalLink, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -150,6 +150,7 @@ export default function ExpensesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalSatisfaction, setModalSatisfaction] = useState<boolean | null>(null);
 
   // localStorage에서 마지막 선택값 불러오기
   const [lastSelectedAccountId, setLastSelectedAccountId] = useState<string | null>(() => {
@@ -258,6 +259,7 @@ export default function ExpensesPage() {
     }
 
     setSelectedSubcategoryId(defaultSubcategoryId);
+    setModalSatisfaction(null);
     reset({
       account_id: defaultAccountId,
       category_id: defaultCategoryId,
@@ -276,6 +278,7 @@ export default function ExpensesPage() {
     setEditingExpense(expense);
     setSelectedCategoryId(expense.category_id);
     setSelectedSubcategoryId(expense.subcategory_id);
+    setModalSatisfaction(expense.satisfaction ?? null);
     reset({
       account_id: expense.account_id,
       category_id: expense.category_id,
@@ -295,6 +298,7 @@ export default function ExpensesPage() {
     setEditingExpense(null);
     setSelectedCategoryId(null);
     setSelectedSubcategoryId(null);
+    setModalSatisfaction(null);
     reset();
   };
 
@@ -310,6 +314,7 @@ export default function ExpensesPage() {
         amount: parseFloat(data.amount.replace(/,/g, '')) || 0,
         memo: data.memo || null,
         purchase_url: data.purchase_url || null,
+        satisfaction: modalSatisfaction,
         expense_at: data.expense_at || undefined,
       };
 
@@ -621,7 +626,11 @@ export default function ExpensesPage() {
                           )}
                         </p>
                         {expense.product_name && (
-                          <p className="text-sm text-gray-800 font-semibold">{expense.product_name}</p>
+                          <p className="text-sm text-gray-800 font-semibold flex items-center gap-1">
+                            {expense.satisfaction === true && <ThumbsUp size={14} className="text-green-600" />}
+                            {expense.satisfaction === false && <ThumbsDown size={14} className="text-red-600" />}
+                            {expense.product_name}
+                          </p>
                         )}
                         <p className="text-sm text-[rgb(161,25,25)] font-mono">
                           {formatDateTime(expense.expense_at)}
@@ -727,7 +736,13 @@ export default function ExpensesPage() {
                       <TableCell className={`text-right font-medium font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
                         {formatCurrency(Number(expense.amount))}
                       </TableCell>
-                      <TableCell className="text-gray-800 font-semibold break-words">{expense.product_name || '-'}</TableCell>
+                      <TableCell className="text-gray-800 font-semibold break-words">
+                        <span className="flex items-center gap-1">
+                          {expense.satisfaction === true && <ThumbsUp size={14} className="text-green-600 flex-shrink-0" />}
+                          {expense.satisfaction === false && <ThumbsDown size={14} className="text-red-600 flex-shrink-0" />}
+                          {expense.product_name || '-'}
+                        </span>
+                      </TableCell>
                       <TableCell className="break-words whitespace-pre-line">
                         {(() => {
                           const { productMemo, expenseMemo } = getCombinedMemo(expense);
@@ -856,6 +871,36 @@ export default function ExpensesPage() {
               error={errors.store_id?.message}
               {...register('store_id')}
             />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">만족도 (선택)</label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setModalSatisfaction(modalSatisfaction === true ? null : true)}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg border ${
+                    modalSatisfaction === true
+                      ? 'bg-green-50 border-green-500 text-green-700'
+                      : 'border-gray-300 text-gray-500 hover:border-green-400 hover:text-green-600'
+                  }`}
+                >
+                  <ThumbsUp size={18} />
+                  <span>만족</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalSatisfaction(modalSatisfaction === false ? null : false)}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg border ${
+                    modalSatisfaction === false
+                      ? 'bg-red-50 border-red-500 text-red-700'
+                      : 'border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-600'
+                  }`}
+                >
+                  <ThumbsDown size={18} />
+                  <span>불만족</span>
+                </button>
+              </div>
+            </div>
 
             <Input
               id="purchase_url"

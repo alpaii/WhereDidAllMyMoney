@@ -124,6 +124,7 @@ export interface Expense {
   amount: number;
   memo?: string;
   purchase_url?: string;
+  satisfaction?: boolean | null;  // true=만족, false=불만족, null=미평가
   expense_at: string;
   created_at: string;
   updated_at: string;
@@ -149,6 +150,7 @@ export interface ExpenseCreate {
   amount: number;
   memo?: string | null;
   purchase_url?: string | null;
+  satisfaction?: boolean | null;
   expense_at?: string;
 }
 

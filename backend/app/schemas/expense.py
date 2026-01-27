@@ -10,6 +10,7 @@ class ExpenseBase(BaseModel):
     amount: Decimal
     memo: Optional[str] = None
     purchase_url: Optional[str] = Field(None, max_length=2048)
+    satisfaction: Optional[bool] = None  # True=만족, False=불만족, None=미평가
     expense_at: datetime
 
 
@@ -32,6 +33,7 @@ class ExpenseUpdate(BaseModel):
     amount: Optional[Decimal] = None
     memo: Optional[str] = None
     purchase_url: Optional[str] = Field(None, max_length=2048)
+    satisfaction: Optional[bool] = None
     expense_at: Optional[datetime] = None
 
 
