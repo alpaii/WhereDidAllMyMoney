@@ -12,6 +12,7 @@ class AccountType(str, enum.Enum):
     BANK = "bank"  # 일반 은행 계좌
     CREDIT_CARD = "credit_card"  # 신용카드
     PREPAID = "prepaid"  # 선불/충전식 (포인트 등)
+    OTHER = "other"  # 기타
 
 
 class Account(Base):

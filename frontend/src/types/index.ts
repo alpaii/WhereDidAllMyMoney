@@ -26,7 +26,7 @@ export interface TokenResponse {
 }
 
 // Account types
-export type AccountType = 'bank' | 'credit_card' | 'prepaid';
+export type AccountType = 'bank' | 'credit_card' | 'prepaid' | 'other';
 
 export interface Account {
   id: string;

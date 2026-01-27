@@ -44,6 +44,7 @@ export function getAccountTypeLabel(type: string): string {
     bank: '은행계좌',
     credit_card: '신용카드',
     prepaid: '선불/포인트',
+    other: '기타',
   };
   return labels[type] || type;
 }
@@ -53,6 +54,7 @@ export function getAccountTypeColor(type: string): string {
     bank: 'bg-blue-100 text-blue-800',
     credit_card: 'bg-purple-100 text-purple-800',
     prepaid: 'bg-green-100 text-green-800',
+    other: 'bg-gray-100 text-gray-800',
   };
   return colors[type] || 'bg-gray-100 text-gray-800';
 }

@@ -38,7 +38,7 @@ import type { Account, AccountType } from '@/types';
 
 const accountSchema = z.object({
   name: z.string().min(1, '계좌명을 입력하세요'),
-  account_type: z.enum(['bank', 'credit_card', 'prepaid']),
+  account_type: z.enum(['bank', 'credit_card', 'prepaid', 'other']),
   balance: z.string(),
   description: z.string().optional(),
   badge_color: z.string().optional(),
@@ -50,6 +50,7 @@ const accountTypeOptions = [
   { value: 'bank', label: '은행계좌' },
   { value: 'credit_card', label: '신용카드' },
   { value: 'prepaid', label: '선불/포인트' },
+  { value: 'other', label: '기타' },
 ];
 
 // 배지 색상 팔레트
