@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+import os
+import uuid as uuid_lib
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
@@ -6,21 +9,26 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime, date
 from decimal import Decimal
+from PIL import Image
 
 from app.db.database import get_db
 from app.models.user import User
 from app.models.account import Account
 from app.models.category import Category, Subcategory, Product
-from app.models.expense import Expense
+from app.models.expense import Expense, ExpensePhoto
 from app.models.store import Store
 from app.schemas.expense import (
     ExpenseCreate, ExpenseUpdate, ExpenseResponse, ExpenseWithDetails,
     ExpenseStatsByCategory, ExpenseStatsByPeriod, ExpenseSummary,
-    PaginatedExpenseResponse
+    PaginatedExpenseResponse, ExpensePhotoResponse
 )
 from app.core.deps import get_current_user
+from app.core.config import settings
 
 router = APIRouter()
+
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+THUMBNAIL_SIZE = (200, 200)
 
 
 @router.get("/", response_model=PaginatedExpenseResponse)
@@ -62,7 +70,8 @@ async def get_expenses(
             selectinload(Expense.category),
             selectinload(Expense.subcategory),
             selectinload(Expense.product),
-            selectinload(Expense.store)
+            selectinload(Expense.store),
+            selectinload(Expense.photos)
         )
         .order_by(Expense.expense_at.desc())
         .offset(offset)
@@ -95,7 +104,8 @@ async def get_expenses(
             category_name=exp.category.name if exp.category else None,
             subcategory_name=exp.subcategory.name if exp.subcategory else None,
             product_name=exp.product.name if exp.product else None,
-            store_name=exp.store.name if exp.store else None
+            store_name=exp.store.name if exp.store else None,
+            photos=[ExpensePhotoResponse.model_validate(p) for p in sorted(exp.photos, key=lambda x: x.sort_order)]
         )
         for exp in expenses
     ]
@@ -220,7 +230,8 @@ async def get_expense(
             selectinload(Expense.category),
             selectinload(Expense.subcategory),
             selectinload(Expense.product),
-            selectinload(Expense.store)
+            selectinload(Expense.store),
+            selectinload(Expense.photos)
         )
     )
     expense = result.scalar_one_or_none()
@@ -250,7 +261,8 @@ async def get_expense(
         category_name=expense.category.name if expense.category else None,
         subcategory_name=expense.subcategory.name if expense.subcategory else None,
         product_name=expense.product.name if expense.product else None,
-        store_name=expense.store.name if expense.store else None
+        store_name=expense.store.name if expense.store else None,
+        photos=[ExpensePhotoResponse.model_validate(p) for p in sorted(expense.photos, key=lambda x: x.sort_order)]
     )
 
 
@@ -344,7 +356,10 @@ async def delete_expense(
             Expense.id == expense_id,
             Expense.user_id == current_user.id
         )
-        .options(selectinload(Expense.account))
+        .options(
+            selectinload(Expense.account),
+            selectinload(Expense.photos)
+        )
     )
     expense = result.scalar_one_or_none()
 
@@ -354,8 +369,148 @@ async def delete_expense(
             detail="Expense not found"
         )
 
+    # Delete photo files
+    for photo in expense.photos:
+        try:
+            if photo.file_path and os.path.exists(photo.file_path):
+                os.remove(photo.file_path)
+            if photo.thumbnail_path and os.path.exists(photo.thumbnail_path):
+                os.remove(photo.thumbnail_path)
+        except Exception:
+            pass
+
     # Restore account balance
     expense.account.balance += expense.amount
 
     await db.delete(expense)
+    await db.commit()
+
+
+# Photo endpoints
+@router.post("/{expense_id}/photos", response_model=ExpensePhotoResponse, status_code=status.HTTP_201_CREATED)
+async def upload_expense_photo(
+    expense_id: UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """지출 사진 업로드"""
+    # Verify expense belongs to user
+    result = await db.execute(
+        select(Expense)
+        .where(
+            Expense.id == expense_id,
+            Expense.user_id == current_user.id
+        )
+        .options(selectinload(Expense.photos))
+    )
+    expense = result.scalar_one_or_none()
+
+    if not expense:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+
+    # Validate file extension
+    ext = Path(file.filename).suffix.lower() if file.filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File type not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    # Validate file size
+    content = await file.read()
+    if len(content) > settings.MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large. Max size: {settings.MAX_UPLOAD_SIZE // (1024*1024)}MB"
+        )
+
+    # Generate unique filename
+    unique_id = str(uuid_lib.uuid4())
+    filename = f"{unique_id}{ext}"
+    photo_path = Path(settings.UPLOAD_DIR) / "photos" / filename
+    thumbnail_path = Path(settings.UPLOAD_DIR) / "thumbnails" / filename
+
+    # Save original file
+    photo_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(photo_path, "wb") as f:
+        f.write(content)
+
+    # Create thumbnail
+    thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with Image.open(photo_path) as img:
+            img.thumbnail(THUMBNAIL_SIZE)
+            img.save(thumbnail_path)
+    except Exception:
+        thumbnail_path = None
+
+    # Get next sort order
+    max_sort = max([p.sort_order for p in expense.photos], default=-1)
+
+    # Create database record
+    photo = ExpensePhoto(
+        expense_id=expense_id,
+        file_path=str(photo_path),
+        thumbnail_path=str(thumbnail_path) if thumbnail_path else None,
+        sort_order=max_sort + 1
+    )
+    db.add(photo)
+    await db.commit()
+    await db.refresh(photo)
+
+    return photo
+
+
+@router.delete("/{expense_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_expense_photo(
+    expense_id: UUID,
+    photo_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """지출 사진 삭제"""
+    # Verify expense belongs to user
+    result = await db.execute(
+        select(Expense).where(
+            Expense.id == expense_id,
+            Expense.user_id == current_user.id
+        )
+    )
+    expense = result.scalar_one_or_none()
+
+    if not expense:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+
+    # Get photo
+    result = await db.execute(
+        select(ExpensePhoto).where(
+            ExpensePhoto.id == photo_id,
+            ExpensePhoto.expense_id == expense_id
+        )
+    )
+    photo = result.scalar_one_or_none()
+
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Photo not found"
+        )
+
+    # Delete files
+    try:
+        if photo.file_path and os.path.exists(photo.file_path):
+            os.remove(photo.file_path)
+        if photo.thumbnail_path and os.path.exists(photo.thumbnail_path):
+            os.remove(photo.thumbnail_path)
+    except Exception:
+        pass
+
+    await db.delete(photo)
     await db.commit()

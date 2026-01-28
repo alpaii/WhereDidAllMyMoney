@@ -112,6 +112,16 @@ export interface ProductCreate {
   memo?: string | null;
 }
 
+// ExpensePhoto types
+export interface ExpensePhoto {
+  id: string;
+  expense_id: string;
+  file_path: string;
+  thumbnail_path?: string;
+  sort_order: number;
+  created_at: string;
+}
+
 // Expense types
 export interface Expense {
   id: string;
@@ -128,6 +138,7 @@ export interface Expense {
   expense_at: string;
   created_at: string;
   updated_at: string;
+  photos?: ExpensePhoto[];
   // Backend returns flat field names from ExpenseWithDetails
   account_name?: string;
   category_name?: string;

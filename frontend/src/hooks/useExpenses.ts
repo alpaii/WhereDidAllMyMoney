@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import api from '@/lib/api';
-import type { Expense, ExpenseCreate, PaginatedResponse } from '@/types';
+import type { Expense, ExpenseCreate, ExpensePhoto } from '@/types';
 
 interface UseExpensesOptions {
   page?: number;
@@ -83,6 +83,45 @@ export function useExpenses(options: UseExpensesOptions = {}) {
     setExpenses((prev) => prev.filter((expense) => expense.id !== id));
   };
 
+  const uploadPhoto = async (expenseId: string, file: File): Promise<ExpensePhoto> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await api.post<ExpensePhoto>(
+      `/expenses/${expenseId}/photos`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    // Update local state
+    setExpenses((prev) =>
+      prev.map((expense) =>
+        expense.id === expenseId
+          ? { ...expense, photos: [...(expense.photos || []), response.data] }
+          : expense
+      )
+    );
+
+    return response.data;
+  };
+
+  const deletePhoto = async (expenseId: string, photoId: string) => {
+    await api.delete(`/expenses/${expenseId}/photos/${photoId}`);
+
+    // Update local state
+    setExpenses((prev) =>
+      prev.map((expense) =>
+        expense.id === expenseId
+          ? { ...expense, photos: expense.photos?.filter((p) => p.id !== photoId) || [] }
+          : expense
+      )
+    );
+  };
+
   return {
     expenses,
     total,
@@ -94,5 +133,7 @@ export function useExpenses(options: UseExpensesOptions = {}) {
     createExpense,
     updateExpense,
     deleteExpense,
+    uploadPhoto,
+    deletePhoto,
   };
 }

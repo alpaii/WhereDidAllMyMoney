@@ -1,7 +1,7 @@
 from app.models.user import User, UserRole, RefreshToken
 from app.models.account import Account, AccountType, Transfer
 from app.models.category import Category, Subcategory, Product
-from app.models.expense import Expense
+from app.models.expense import Expense, ExpensePhoto
 from app.models.store import Store
 
 __all__ = [
@@ -15,5 +15,6 @@ __all__ = [
     "Subcategory",
     "Product",
     "Expense",
+    "ExpensePhoto",
     "Store",
 ]

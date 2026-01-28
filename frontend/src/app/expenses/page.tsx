@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Camera, X } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -25,7 +26,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories, useProducts } from '@/hooks/useCategories';
 import { useStores } from '@/hooks/useStores';
 import { formatCurrency, formatDateTime, toSeoulDateTimeLocal, getSeoulNow } from '@/lib/utils';
-import type { Expense } from '@/types';
+import type { Expense, ExpensePhoto } from '@/types';
 
 const expenseSchema = z.object({
   account_id: z.string().min(1, '계좌를 선택하세요'),
@@ -88,7 +89,7 @@ const PAGE_SIZE = 100;
 
 export default function ExpensesPage() {
   const [page, setPage] = useState(1);
-  const { expenses, total, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense } =
+  const { expenses, total, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense, uploadPhoto, deletePhoto } =
     useExpenses({ page, size: PAGE_SIZE });
   const { accounts } = useAccounts();
   const { categories } = useCategories();
@@ -151,6 +152,25 @@ export default function ExpensesPage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalSatisfaction, setModalSatisfaction] = useState<boolean | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 라이트박스 상태
+  const [lightboxPhotos, setLightboxPhotos] = useState<ExpensePhoto[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  const openLightbox = (photos: ExpensePhoto[], index: number) => {
+    setLightboxPhotos(photos);
+    setLightboxIndex(index);
+    setIsLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setIsLightboxOpen(false);
+    setLightboxPhotos([]);
+    setLightboxIndex(0);
+  };
 
   // localStorage에서 마지막 선택값 불러오기
   const [lastSelectedAccountId, setLastSelectedAccountId] = useState<string | null>(() => {
@@ -213,6 +233,16 @@ export default function ExpensesPage() {
       setValue('product_id', '');
     }
   }, [watchSubcategoryId, selectedSubcategoryId, setValue]);
+
+  // 편집 중인 지출의 사진 목록 동기화
+  useEffect(() => {
+    if (editingExpense) {
+      const updatedExpense = expenses.find(e => e.id === editingExpense.id);
+      if (updatedExpense && updatedExpense.photos !== editingExpense.photos) {
+        setEditingExpense(updatedExpense);
+      }
+    }
+  }, [expenses, editingExpense]);
 
   // 선택된 서브카테고리의 상품 목록
   const filteredProducts = products.filter(p => p.subcategory_id === selectedSubcategoryId);
@@ -370,6 +400,46 @@ export default function ExpensesPage() {
     } catch (error) {
       console.error('Failed to copy expense:', error);
     }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editingExpense || !e.target.files?.length) return;
+
+    const file = e.target.files[0];
+    try {
+      setIsUploadingPhoto(true);
+      await uploadPhoto(editingExpense.id, file);
+      // Refresh expenses to get updated photos
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined });
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      alert('사진 업로드에 실패했습니다.');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handlePhotoDelete = async (photoId: string) => {
+    if (!editingExpense) return;
+    if (!confirm('이 사진을 삭제하시겠습니까?')) return;
+
+    try {
+      await deletePhoto(editingExpense.id, photoId);
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined });
+    } catch (error) {
+      console.error('Failed to delete photo:', error);
+      alert('사진 삭제에 실패했습니다.');
+    }
+  };
+
+  // Get photo URL from file path
+  const getPhotoUrl = (filePath: string) => {
+    // Backend serves files from /uploads
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || '';
+    return `${apiBaseUrl}/${filePath}`;
   };
 
   const accountOptions = accounts.map((acc) => ({ value: acc.id, label: acc.name }));
@@ -618,6 +688,25 @@ export default function ExpensesPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
+                      {/* Thumbnail */}
+                      {expense.photos && expense.photos.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => openLightbox(expense.photos!, 0)}
+                          className="relative flex-shrink-0"
+                        >
+                          <img
+                            src={getPhotoUrl(expense.photos[0].thumbnail_path || expense.photos[0].file_path)}
+                            alt="지출 사진"
+                            className="w-12 h-12 object-cover rounded-lg border border-gray-400 hover:opacity-80 transition-opacity"
+                          />
+                          {expense.photos.length > 1 && (
+                            <span className="absolute -bottom-1 -right-1 bg-gray-800 text-white text-xs px-1 rounded">
+                              +{expense.photos.length - 1}
+                            </span>
+                          )}
+                        </button>
+                      )}
                       <div>
                         <p className="font-medium text-gray-800">
                           {expense.category_name || '미분류'}
@@ -731,11 +820,30 @@ export default function ExpensesPage() {
                         {formatCurrency(Number(expense.amount))}
                       </TableCell>
                       <TableCell className="text-gray-800 font-semibold break-words">
-                        <span className="flex items-center gap-1">
-                          {expense.satisfaction === true && <ThumbsUp size={14} className="text-green-600 flex-shrink-0" />}
-                          {expense.satisfaction === false && <ThumbsDown size={14} className="text-red-600 flex-shrink-0" />}
-                          {expense.product_name || '-'}
-                        </span>
+                        <div>
+                          <span className="flex items-center gap-1">
+                            {expense.satisfaction === true && <ThumbsUp size={14} className="text-green-600 flex-shrink-0" />}
+                            {expense.satisfaction === false && <ThumbsDown size={14} className="text-red-600 flex-shrink-0" />}
+                            {expense.product_name || '-'}
+                          </span>
+                          {expense.photos && expense.photos.length > 0 && (
+                            <div className="flex gap-1 mt-2">
+                              {expense.photos.map((photo, idx) => (
+                                <button
+                                  key={photo.id}
+                                  type="button"
+                                  onClick={() => openLightbox(expense.photos!, idx)}
+                                >
+                                  <img
+                                    src={getPhotoUrl(photo.thumbnail_path || photo.file_path)}
+                                    alt="지출 사진"
+                                    className="w-8 h-8 object-cover rounded border border-gray-400 hover:opacity-80 transition-opacity"
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="break-words whitespace-pre-line">
                         {(() => {
@@ -869,6 +977,57 @@ export default function ExpensesPage() {
               {...register('purchase_url')}
             />
 
+            {/* Photo upload section - only for editing */}
+            {editingExpense && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  사진
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {/* Existing photos */}
+                  {editingExpense.photos?.map((photo) => (
+                    <div key={photo.id} className="relative group">
+                      <img
+                        src={getPhotoUrl(photo.thumbnail_path || photo.file_path)}
+                        alt="지출 사진"
+                        className="w-20 h-20 object-cover rounded-lg border border-gray-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handlePhotoDelete(photo.id)}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  {/* Upload button */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    {isUploadingPhoto ? (
+                      <span className="text-xs text-gray-500">업로드 중...</span>
+                    ) : (
+                      <>
+                        <Camera size={24} className="text-gray-400" />
+                        <span className="text-xs text-gray-500 mt-1">추가</span>
+                      </>
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingExpense ? (
                 <Button
@@ -921,7 +1080,69 @@ export default function ExpensesPage() {
             </div>
           </form>
         </Modal>
+
       </div>
+
+      {/* Lightbox - rendered via Portal to document.body */}
+      {isLightboxOpen && lightboxPhotos.length > 0 && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 p-2 text-white hover:text-gray-300 z-10"
+          >
+            <X size={32} />
+          </button>
+
+          {/* Previous button */}
+          {lightboxPhotos.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxPhotos.length - 1));
+              }}
+              className="absolute left-4 p-2 text-white hover:text-gray-300 z-10"
+            >
+              <ChevronLeft size={40} />
+            </button>
+          )}
+
+          {/* Image */}
+          <img
+            src={getPhotoUrl(lightboxPhotos[lightboxIndex].file_path)}
+            alt="지출 사진"
+            className="max-w-[90vw] max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Next button */}
+          {lightboxPhotos.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev < lightboxPhotos.length - 1 ? prev + 1 : 0));
+              }}
+              className="absolute right-4 p-2 text-white hover:text-gray-300 z-10"
+            >
+              <ChevronRight size={40} />
+            </button>
+          )}
+
+          {/* Counter */}
+          {lightboxPhotos.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm">
+              {lightboxIndex + 1} / {lightboxPhotos.length}
+            </div>
+          )}
+        </div>,
+        document.body
+      )}
     </DashboardLayout>
   );
 }

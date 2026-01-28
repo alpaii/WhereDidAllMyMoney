@@ -1,8 +1,21 @@
 from pydantic import BaseModel, Field, HttpUrl
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
+
+
+# ExpensePhoto schemas
+class ExpensePhotoResponse(BaseModel):
+    id: UUID
+    expense_id: UUID
+    file_path: str
+    thumbnail_path: Optional[str] = None
+    sort_order: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 # Base
@@ -59,6 +72,7 @@ class ExpenseWithDetails(ExpenseResponse):
     subcategory_name: Optional[str] = None
     product_name: Optional[str] = None
     store_name: Optional[str] = None
+    photos: List[ExpensePhotoResponse] = []
 
 
 # Paginated response

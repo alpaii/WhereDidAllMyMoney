@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import Column, String, DateTime, ForeignKey, Numeric, Text, Boolean
+from sqlalchemy import Column, String, DateTime, ForeignKey, Numeric, Text, Boolean, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.database import Base
@@ -33,3 +33,18 @@ class Expense(Base):
     subcategory = relationship("Subcategory", back_populates="expenses")
     product = relationship("Product", back_populates="expenses")
     store = relationship("Store", back_populates="expenses")
+    photos = relationship("ExpensePhoto", back_populates="expense", cascade="all, delete-orphan")
+
+
+class ExpensePhoto(Base):
+    __tablename__ = "expense_photos"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    expense_id = Column(UUID(as_uuid=True), ForeignKey("expenses.id", ondelete="CASCADE"), nullable=False, index=True)
+    file_path = Column(String(512), nullable=False)  # 로컬 파일 경로
+    thumbnail_path = Column(String(512), nullable=True)  # 썸네일 파일 경로
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    expense = relationship("Expense", back_populates="photos")
