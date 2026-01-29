@@ -28,6 +28,8 @@ services:
       - SECRET_KEY=your-super-secret-key-change-in-production
       - DEBUG=true
       - TZ=Asia/Seoul
+      - NAVER_CLIENT_ID=Lnh8zKfly3YTgXxqOueV
+      - NAVER_CLIENT_SECRET=bBFj6x9wNS
     ports:
       - "8000:8000"
     depends_on:
@@ -35,7 +37,9 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - uploads_data:/app/uploads
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  uploads_data:

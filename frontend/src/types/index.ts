@@ -193,12 +193,46 @@ export interface DailyExpense {
 export interface Store {
   id: string;
   name: string;
+  address?: string;
+  road_address?: string;
+  latitude?: number;
+  longitude?: number;
+  naver_place_id?: string;
+  category?: string;
+  phone?: string;
   sort_order: number;
   created_at: string;
 }
 
 export interface StoreCreate {
   name: string;
+  address?: string | null;
+  road_address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  naver_place_id?: string | null;
+  category?: string | null;
+  phone?: string | null;
+}
+
+// 네이버 지역 검색 결과
+export interface NaverPlaceItem {
+  title: string;
+  link: string;
+  category: string;
+  description: string;
+  telephone: string;
+  address: string;
+  road_address: string;
+  mapx: string;
+  mapy: string;
+}
+
+export interface NaverSearchResponse {
+  items: NaverPlaceItem[];
+  total: number;
+  start: number;
+  display: number;
 }
 
 // Pagination

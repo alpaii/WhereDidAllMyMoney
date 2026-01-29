@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, GripVertical, Pencil } from 'lucide-react';
+import { Plus, GripVertical, Pencil, MapPin, Tag, X } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -24,8 +24,9 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { DashboardLayout } from '@/components/layout';
 import { Card, CardContent, Button, Input, Modal } from '@/components/ui';
+import { KakaoMap } from '@/components/KakaoMap';
 import { useStores } from '@/hooks/useStores';
-import type { Store } from '@/types';
+import type { Store, StoreCreate } from '@/types';
 
 const storeSchema = z.object({
   name: z.string().min(1, '매장 이름을 입력하세요'),
@@ -59,23 +60,37 @@ function SortableStoreItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg"
+      className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg"
     >
-      <div className="flex items-center gap-3 flex-1">
+      <div className="flex items-start gap-3 flex-1">
         <button
-          className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 touch-none"
+          className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 touch-none mt-0.5"
           {...attributes}
           {...listeners}
         >
           <GripVertical size={20} />
         </button>
-        <span className="font-medium text-gray-800">{store.name}</span>
+        <div className="flex-1 min-w-0">
+          <span className="font-medium text-gray-800 block">{store.name}</span>
+          {store.road_address && (
+            <span className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+              <MapPin size={14} className="flex-shrink-0" />
+              <span className="truncate">{store.road_address}</span>
+            </span>
+          )}
+          {store.category && (
+            <span className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+              <Tag size={12} className="flex-shrink-0" />
+              {store.category}
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onEdit(store)}
           className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          title="이름 변경"
+          title="수정"
         >
           <Pencil size={18} />
         </button>
@@ -97,6 +112,8 @@ export default function StoresPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<StoreCreate | null>(null);
+  const [manualMode, setManualMode] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -130,17 +147,28 @@ export default function StoresPage() {
     }
   };
 
+  const handleSelectPlace = (place: StoreCreate) => {
+    setSelectedPlace(place);
+    form.setValue('name', place.name);
+  };
+
   const handleSave = async (data: StoreForm) => {
     try {
       setIsSubmitting(true);
       if (editingStore) {
-        await updateStore(editingStore.id, { name: data.name });
+        // 수정 모드 - 위치 정보도 함께 업데이트
+        const updateData: Partial<StoreCreate> = selectedPlace
+          ? { ...selectedPlace, name: data.name }
+          : { name: data.name };
+        await updateStore(editingStore.id, updateData);
       } else {
-        await createStore({ name: data.name });
+        // 생성 모드
+        const storeData: StoreCreate = selectedPlace
+          ? { ...selectedPlace, name: data.name }
+          : { name: data.name };
+        await createStore(storeData);
       }
-      setIsModalOpen(false);
-      setEditingStore(null);
-      form.reset();
+      handleCloseModal();
     } catch (error) {
       console.error('Failed to save store:', error);
       alert(editingStore ? '매장 수정에 실패했습니다.' : '매장 생성에 실패했습니다.');
@@ -149,8 +177,36 @@ export default function StoresPage() {
     }
   };
 
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingStore(null);
+    setSelectedPlace(null);
+    setManualMode(false);
+    form.reset();
+  };
+
+  const openCreateModal = () => {
+    setEditingStore(null);
+    setSelectedPlace(null);
+    setManualMode(false);
+    form.reset({ name: '' });
+    setIsModalOpen(true);
+  };
+
   const openEditModal = (store: Store) => {
     setEditingStore(store);
+    // 기존 매장 정보를 selectedPlace에 설정
+    setSelectedPlace({
+      name: store.name,
+      address: store.address || undefined,
+      road_address: store.road_address || undefined,
+      latitude: store.latitude || undefined,
+      longitude: store.longitude || undefined,
+      naver_place_id: store.naver_place_id || undefined,
+      category: store.category || undefined,
+      phone: store.phone || undefined,
+    });
+    setManualMode(false);
     form.reset({ name: store.name });
     setIsModalOpen(true);
   };
@@ -170,15 +226,7 @@ export default function StoresPage() {
     <DashboardLayout
       title="매장 관리"
       action={
-        <Button
-          onClick={() => {
-            setEditingStore(null);
-            form.reset({ name: '' });
-            setIsModalOpen(true);
-          }}
-          size="icon"
-          title="매장 추가"
-        >
+        <Button onClick={openCreateModal} size="icon" title="매장 추가">
           <Plus size={20} />
         </Button>
       }
@@ -224,19 +272,109 @@ export default function StoresPage() {
         {/* Modal */}
         <Modal
           isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingStore(null);
-          }}
+          onClose={handleCloseModal}
           title={editingStore ? '매장 수정' : '매장 추가'}
+          size="lg"
         >
           <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
-            <Input
-              id="name"
-              label="매장 이름"
-              error={form.formState.errors.name?.message}
-              {...form.register('name')}
-            />
+            {/* 직접 입력 모드일 때 */}
+            {manualMode ? (
+              <>
+                <Input
+                  id="name"
+                  label="매장 이름"
+                  error={form.formState.errors.name?.message}
+                  {...form.register('name')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setManualMode(false)}
+                  className="text-sm text-primary-600 hover:underline"
+                >
+                  지도에서 검색하기
+                </button>
+              </>
+            ) : (
+              <>
+                {/* 지도 검색 모드 */}
+                {!selectedPlace ? (
+                  <div className="space-y-3">
+                    <KakaoMap onSelectPlace={handleSelectPlace} />
+                    <button
+                      type="button"
+                      onClick={() => setManualMode(true)}
+                      className="text-sm text-primary-600 hover:underline"
+                    >
+                      직접 입력하기
+                    </button>
+                  </div>
+                ) : (
+                  /* 선택된 장소 표시 */
+                  <div className="space-y-3">
+                    {/* 좌표가 있는 경우 (지도로 저장된 매장) */}
+                    {selectedPlace.latitude && selectedPlace.longitude ? (
+                      <>
+                        <KakaoMap
+                          onSelectPlace={handleSelectPlace}
+                          initialStore={selectedPlace}
+                        />
+
+                        {/* 매장 정보 표시 (지도 밖) */}
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="font-medium text-gray-800">{selectedPlace.name}</div>
+                          {selectedPlace.road_address && (
+                            <div className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                              <MapPin size={12} />
+                              {selectedPlace.road_address}
+                            </div>
+                          )}
+                          {selectedPlace.category && (
+                            <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                              <Tag size={10} />
+                              {selectedPlace.category}
+                            </div>
+                          )}
+                        </div>
+
+                        <Input
+                          id="name"
+                          label="매장 이름 (수정 가능)"
+                          error={form.formState.errors.name?.message}
+                          {...form.register('name')}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setManualMode(true)}
+                          className="text-sm text-primary-600 hover:underline"
+                        >
+                          직접 입력하기
+                        </button>
+                      </>
+                    ) : (
+                      /* 좌표가 없는 경우 (직접 입력으로 저장된 매장) */
+                      <>
+                        <Input
+                          id="name"
+                          label="매장 이름 (수정 가능)"
+                          error={form.formState.errors.name?.message}
+                          {...form.register('name')}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPlace(null)}
+                          className="text-sm text-primary-600 hover:underline"
+                        >
+                          지도에서 검색하기
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
             <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingStore ? (
                 <Button
@@ -244,8 +382,7 @@ export default function StoresPage() {
                   variant="danger"
                   onClick={() => {
                     handleDelete(editingStore.id);
-                    setIsModalOpen(false);
-                    setEditingStore(null);
+                    handleCloseModal();
                   }}
                 >
                   삭제
@@ -254,17 +391,14 @@ export default function StoresPage() {
                 <div />
               )}
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setEditingStore(null);
-                  }}
-                >
+                <Button type="button" variant="secondary" onClick={handleCloseModal}>
                   취소
                 </Button>
-                <Button type="submit" isLoading={isSubmitting}>
+                <Button
+                  type="submit"
+                  isLoading={isSubmitting}
+                  disabled={!manualMode && !selectedPlace}
+                >
                   {editingStore ? '수정' : '추가'}
                 </Button>
               </div>

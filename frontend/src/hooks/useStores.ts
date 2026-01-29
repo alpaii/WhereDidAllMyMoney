@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
-import type { Store, StoreCreate } from '@/types';
+import type { Store, StoreCreate, NaverSearchResponse, NaverPlaceItem } from '@/types';
 
 export function useStores() {
   const [stores, setStores] = useState<Store[]>([]);
@@ -58,6 +58,42 @@ export function useStores() {
     });
   };
 
+  const searchNaverPlaces = async (query: string): Promise<NaverPlaceItem[]> => {
+    if (!query.trim()) return [];
+    try {
+      const response = await api.get<NaverSearchResponse>('/stores/naver/search', {
+        params: { query, display: 5 }
+      });
+      return response.data.items;
+    } catch (err) {
+      console.error('Failed to search Naver places:', err);
+      return [];
+    }
+  };
+
+  // 네이버 좌표를 일반 좌표로 변환 (네이버는 KATECH 좌표계 사용)
+  const convertNaverCoords = (mapx: string, mapy: string): { lat: number; lng: number } => {
+    // 네이버 지역검색 API는 좌표를 10000000으로 나눈 값을 제공
+    const lng = parseInt(mapx, 10) / 10000000;
+    const lat = parseInt(mapy, 10) / 10000000;
+    return { lat, lng };
+  };
+
+  // NaverPlaceItem을 StoreCreate로 변환
+  const naverPlaceToStoreCreate = (place: NaverPlaceItem): StoreCreate => {
+    const coords = convertNaverCoords(place.mapx, place.mapy);
+    return {
+      name: place.title,
+      address: place.address || null,
+      road_address: place.road_address || null,
+      latitude: coords.lat || null,
+      longitude: coords.lng || null,
+      naver_place_id: place.link || null,
+      category: place.category || null,
+      phone: place.telephone || null,
+    };
+  };
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
@@ -73,5 +109,7 @@ export function useStores() {
     updateStore,
     deleteStore,
     updateStoreOrder,
+    searchNaverPlaces,
+    naverPlaceToStoreCreate,
   };
 }
