@@ -55,10 +55,24 @@ export default function TransfersPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<TransferForm>({
     resolver: zodResolver(transferSchema),
   });
+
+  // 천단위 콤마 포맷 함수
+  const formatAmountWithComma = (value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, '');
+    if (!numericValue) return '';
+    return Number(numericValue).toLocaleString('ko-KR');
+  };
+
+  // 금액 입력 시 천단위 콤마 자동 적용
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatAmountWithComma(e.target.value);
+    setValue('amount', formatted);
+  };
 
   const fetchTransfers = useCallback(async () => {
     try {
@@ -102,7 +116,7 @@ export default function TransfersPage() {
     reset({
       from_account_id: transfer.from_account_id,
       to_account_id: transfer.to_account_id,
-      amount: String(transfer.amount),
+      amount: Math.round(Number(transfer.amount)).toLocaleString('ko-KR'),
       memo: transfer.memo || '',
       transferred_at: toSeoulDateTimeLocal(transfer.transferred_at),
     });
@@ -121,7 +135,7 @@ export default function TransfersPage() {
       const transferData: TransferCreate = {
         from_account_id: data.from_account_id,
         to_account_id: data.to_account_id,
-        amount: parseFloat(data.amount) || 0,
+        amount: parseFloat(data.amount.replace(/,/g, '')) || 0,
         memo: data.memo || undefined,
         transferred_at: data.transferred_at || undefined,
       };
@@ -336,11 +350,11 @@ export default function TransfersPage() {
 
             <Input
               id="amount"
-              type="number"
+              type="text"
               label="금액"
               placeholder="0"
               error={errors.amount?.message}
-              {...register('amount')}
+              {...register('amount', { onChange: handleAmountChange })}
             />
 
             <Input
@@ -354,7 +368,6 @@ export default function TransfersPage() {
             <Input
               id="memo"
               label="메모 (선택)"
-              placeholder="예: 적금 이체"
               error={errors.memo?.message}
               {...register('memo')}
             />
