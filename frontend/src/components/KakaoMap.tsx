@@ -418,6 +418,11 @@ export function KakaoMap({ onSelectPlace, initialStore }: KakaoMapProps) {
           onClick={() => {
             const storeData = convertToStoreCreate(selectedPlace);
             onSelectPlace(storeData);
+            // 선택 후 상태 초기화
+            setSearchResults([]);
+            setSelectedPlace(null);
+            setSearchQuery('');
+            clearMarkers();
           }}
           className="w-full"
         >
