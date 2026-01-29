@@ -149,9 +149,9 @@ export default function StatisticsPage() {
                       <Bar dataKey="amount" fill="#3B82F6" radius={[4, 4, 0, 0]}>
                         <LabelList
                           dataKey="amount"
-                          position="insideTop"
-                          fontSize={16}
-                          fill="#fff"
+                          position="top"
+                          fontSize={11}
+                          fill="#374151"
                           formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
                         />
                       </Bar>
@@ -191,9 +191,9 @@ export default function StatisticsPage() {
                       <Bar dataKey="amount" fill="#10B981" radius={[4, 4, 0, 0]}>
                         <LabelList
                           dataKey="amount"
-                          position="insideTop"
-                          fontSize={16}
-                          fill="#fff"
+                          position="top"
+                          fontSize={11}
+                          fill="#374151"
                           formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
                         />
                       </Bar>
