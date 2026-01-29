@@ -134,7 +134,7 @@ function SortableAccountItem({
         </div>
       </div>
       <div className="flex items-center justify-between sm:justify-end gap-4">
-        <p className={`text-xl font-bold ${Number(account.balance) < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+        <p className={`text-xl font-bold font-mono ${Number(account.balance) < 0 ? 'text-red-600' : 'text-gray-800'}`}>
           {formatCurrency(Number(account.balance))}
         </p>
         <div className="flex items-center gap-2">
@@ -294,7 +294,7 @@ export default function AccountsPage() {
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 font-medium">전체 잔액</span>
-                <span className={`text-2xl font-bold ${
+                <span className={`text-2xl font-bold font-mono ${
                   accounts.reduce((sum, acc) => sum + Number(acc.balance), 0) < 0
                     ? 'text-red-600'
                     : 'text-gray-800'
