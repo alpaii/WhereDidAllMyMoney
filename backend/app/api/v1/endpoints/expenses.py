@@ -24,6 +24,7 @@ from app.schemas.expense import (
 )
 from app.core.deps import get_current_user
 from app.core.config import settings
+from app.services.account_service import update_balance, get_account_with_lock
 
 router = APIRouter()
 
@@ -203,8 +204,8 @@ async def create_expense(
     )
     db.add(expense)
 
-    # Update account balance
-    account.balance -= expense_data.amount
+    # Update account balance with lock for concurrency safety
+    await update_balance(db, expense_data.account_id, current_user.id, -Decimal(str(expense_data.amount)))
 
     await db.commit()
     await db.refresh(expense)
@@ -290,49 +291,24 @@ async def update_expense(
             detail="Expense not found"
         )
 
-    old_amount = expense.amount
-    old_account = expense.account
+    old_amount = Decimal(str(expense.amount))
+    old_account_id = expense.account_id
 
     update_data = expense_data.model_dump(exclude_unset=True)
 
-    # Handle amount change - restore old balance, apply new
-    if "amount" in update_data:
-        old_account.balance += old_amount  # Restore old amount
-        new_amount = update_data["amount"]
+    # Handle balance changes with concurrency-safe operations
+    if "amount" in update_data or "account_id" in update_data:
+        new_amount = Decimal(str(update_data.get("amount", expense.amount)))
+        new_account_id = update_data.get("account_id", expense.account_id)
 
-        # If account is also changing
-        if "account_id" in update_data:
-            result = await db.execute(
-                select(Account).where(
-                    Account.id == update_data["account_id"],
-                    Account.user_id == current_user.id
-                )
-            )
-            new_account = result.scalar_one_or_none()
-            if not new_account:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Account not found"
-                )
-            new_account.balance -= new_amount
+        if old_account_id == new_account_id:
+            # Same account: apply difference
+            delta = old_amount - new_amount  # positive if reducing expense
+            await update_balance(db, old_account_id, current_user.id, delta)
         else:
-            old_account.balance -= new_amount
-    elif "account_id" in update_data:
-        # Only account changed, move the expense amount
-        old_account.balance += old_amount
-        result = await db.execute(
-            select(Account).where(
-                Account.id == update_data["account_id"],
-                Account.user_id == current_user.id
-            )
-        )
-        new_account = result.scalar_one_or_none()
-        if not new_account:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Account not found"
-            )
-        new_account.balance -= old_amount
+            # Different accounts: restore old, deduct from new
+            await update_balance(db, old_account_id, current_user.id, old_amount)
+            await update_balance(db, new_account_id, current_user.id, -new_amount)
 
     for field, value in update_data.items():
         setattr(expense, field, value)
@@ -379,8 +355,8 @@ async def delete_expense(
         except Exception:
             pass
 
-    # Restore account balance
-    expense.account.balance += expense.amount
+    # Restore account balance with concurrency safety
+    await update_balance(db, expense.account_id, current_user.id, Decimal(str(expense.amount)))
 
     await db.delete(expense)
     await db.commit()

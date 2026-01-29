@@ -24,7 +24,7 @@ import {
 } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import api from '@/lib/api';
-import { formatCurrency, formatDateTime, getSeoulNow, toSeoulDateTimeLocal } from '@/lib/utils';
+import { formatCurrency, formatDateTime, getSeoulNow, toSeoulDateTimeLocal, formatAmountWithComma } from '@/lib/utils';
 import type { Transfer, TransferCreate } from '@/types';
 
 const transferSchema = z.object({
@@ -60,13 +60,6 @@ export default function TransfersPage() {
   } = useForm<TransferForm>({
     resolver: zodResolver(transferSchema),
   });
-
-  // 천단위 콤마 포맷 함수
-  const formatAmountWithComma = (value: string) => {
-    const numericValue = value.replace(/[^0-9]/g, '');
-    if (!numericValue) return '';
-    return Number(numericValue).toLocaleString('ko-KR');
-  };
 
   // 금액 입력 시 천단위 콤마 자동 적용
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {

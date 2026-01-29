@@ -4,12 +4,14 @@ from sqlalchemy import select, or_
 from typing import List
 from uuid import UUID
 from datetime import datetime
+from decimal import Decimal
 
 from app.db.database import get_db
 from app.models.user import User
 from app.models.account import Account, Transfer
 from app.schemas.account import TransferCreate, TransferUpdate, TransferResponse
 from app.core.deps import get_current_user
+from app.services.account_service import transfer_balance, update_balance
 
 router = APIRouter()
 
@@ -84,9 +86,14 @@ async def create_transfer(
             detail="Cannot transfer to the same account"
         )
 
-    # Perform transfer (allow negative balance for credit cards)
-    from_account.balance -= transfer_data.amount
-    to_account.balance += transfer_data.amount
+    # Perform transfer with concurrency-safe balance update
+    await transfer_balance(
+        db,
+        transfer_data.from_account_id,
+        transfer_data.to_account_id,
+        current_user.id,
+        Decimal(str(transfer_data.amount))
+    )
 
     # Create transfer record
     transfer = Transfer(
@@ -168,27 +175,13 @@ async def update_transfer(
             detail="Transfer not found"
         )
 
-    # Get old accounts to restore balances
-    result = await db.execute(
-        select(Account).where(Account.id == transfer.from_account_id)
-    )
-    old_from_account = result.scalar_one()
-
-    result = await db.execute(
-        select(Account).where(Account.id == transfer.to_account_id)
-    )
-    old_to_account = result.scalar_one()
-
-    # Restore old balances
-    old_from_account.balance += transfer.amount
-    old_to_account.balance -= transfer.amount
-
     update_data = transfer_data.model_dump(exclude_unset=True)
 
     # Get new account IDs (or use existing)
     new_from_account_id = update_data.get("from_account_id", transfer.from_account_id)
     new_to_account_id = update_data.get("to_account_id", transfer.to_account_id)
-    new_amount = update_data.get("amount", transfer.amount)
+    new_amount = Decimal(str(update_data.get("amount", transfer.amount)))
+    old_amount = Decimal(str(transfer.amount))
 
     # Verify new accounts belong to user
     if new_from_account_id != transfer.from_account_id or new_to_account_id != transfer.to_account_id:
@@ -204,19 +197,13 @@ async def update_transfer(
             detail="Cannot transfer to the same account"
         )
 
-    # Get new accounts and apply new balances
-    result = await db.execute(
-        select(Account).where(Account.id == new_from_account_id)
-    )
-    new_from_account = result.scalar_one()
+    # Restore old balances with concurrency safety
+    await update_balance(db, transfer.from_account_id, current_user.id, old_amount)
+    await update_balance(db, transfer.to_account_id, current_user.id, -old_amount)
 
-    result = await db.execute(
-        select(Account).where(Account.id == new_to_account_id)
-    )
-    new_to_account = result.scalar_one()
-
-    new_from_account.balance -= new_amount
-    new_to_account.balance += new_amount
+    # Apply new balances with concurrency safety
+    await update_balance(db, new_from_account_id, current_user.id, -new_amount)
+    await update_balance(db, new_to_account_id, current_user.id, new_amount)
 
     # Update transfer fields
     for field, value in update_data.items():
@@ -258,19 +245,10 @@ async def delete_transfer(
             detail="Transfer not found"
         )
 
-    # Restore account balances
-    result = await db.execute(
-        select(Account).where(Account.id == transfer.from_account_id)
-    )
-    from_account = result.scalar_one()
-
-    result = await db.execute(
-        select(Account).where(Account.id == transfer.to_account_id)
-    )
-    to_account = result.scalar_one()
-
-    from_account.balance += transfer.amount
-    to_account.balance -= transfer.amount
+    # Restore account balances with concurrency safety
+    amount = Decimal(str(transfer.amount))
+    await update_balance(db, transfer.from_account_id, current_user.id, amount)
+    await update_balance(db, transfer.to_account_id, current_user.id, -amount)
 
     await db.delete(transfer)
     await db.commit()

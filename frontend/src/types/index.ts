@@ -91,6 +91,16 @@ export interface Subcategory {
   category?: Category;
 }
 
+export interface CategoryCreate {
+  name: string;
+  icon?: string;
+}
+
+export interface SubcategoryCreate {
+  category_id: string;
+  name: string;
+}
+
 export interface Product {
   id: string;
   user_id: string;

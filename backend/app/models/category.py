@@ -13,6 +13,7 @@ class Category(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     name = Column(String(100), nullable=False)
     icon = Column(String(50), nullable=True)
+    is_system = Column(Boolean, nullable=False, default=False)
     sort_order = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 

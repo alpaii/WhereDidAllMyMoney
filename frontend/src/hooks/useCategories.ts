@@ -1,16 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
-import type { Category, Subcategory, Product, ProductCreate } from '@/types';
-
-export interface CategoryCreate {
-  name: string;
-  icon?: string;
-}
-
-export interface SubcategoryCreateData {
-  category_id: string;
-  name: string;
-}
+import type { Category, Subcategory, Product, ProductCreate, CategoryCreate, SubcategoryCreate } from '@/types';
 
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -52,7 +42,7 @@ export function useCategories() {
     setCategories((prev) => prev.filter((cat) => cat.id !== id));
   };
 
-  const createSubcategory = async (data: SubcategoryCreateData) => {
+  const createSubcategory = async (data: SubcategoryCreate) => {
     const response = await api.post<Subcategory>('/categories/subcategories', data);
     await fetchCategories();
     return response.data;

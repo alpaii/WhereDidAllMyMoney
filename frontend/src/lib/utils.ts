@@ -58,3 +58,62 @@ export function getAccountTypeColor(type: string): string {
   };
   return colors[type] || 'bg-gray-100 text-gray-800';
 }
+
+// 금액 입력 시 천단위 콤마 포맷팅
+export function formatAmountWithComma(value: string, allowNegative = true): string {
+  const isNegative = allowNegative && value.startsWith('-');
+  const numericValue = value.replace(/[^0-9]/g, '');
+  if (!numericValue) return isNegative ? '-' : '';
+  const formatted = Number(numericValue).toLocaleString('ko-KR');
+  return isNegative ? `-${formatted}` : formatted;
+}
+
+// 포맷된 금액 문자열을 숫자로 변환
+export function parseFormattedAmount(value: string): number {
+  return parseFloat(value.replace(/,/g, '')) || 0;
+}
+
+// 로컬 날짜를 YYYY-MM-DD 형식으로 포맷
+export function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// 날짜 프리셋 타입
+export type DatePreset = 'this_week' | 'this_month' | 'this_year' | 'custom';
+
+// 날짜 프리셋에 따른 시작/종료 날짜 계산
+export function getDateRange(preset: string): { start: string; end: string } {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const dayOfWeek = today.getDay();
+
+  switch (preset) {
+    case 'this_week': {
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const startOfWeek = new Date(year, month, today.getDate() + diffToMonday);
+      const endOfWeek = new Date(year, month, today.getDate() + diffToMonday + 6);
+      return {
+        start: formatLocalDate(startOfWeek),
+        end: formatLocalDate(endOfWeek),
+      };
+    }
+    case 'this_month': {
+      return {
+        start: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+        end: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`,
+      };
+    }
+    case 'this_year': {
+      return {
+        start: `${year}-01-01`,
+        end: `${year}-12-31`,
+      };
+    }
+    default:
+      return { start: '', end: '' };
+  }
+}

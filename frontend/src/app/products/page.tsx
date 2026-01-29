@@ -24,7 +24,7 @@ import {
 import { useProducts, useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useExpenses } from '@/hooks/useExpenses';
-import { formatCurrency, getSeoulNow } from '@/lib/utils';
+import { formatCurrency, getSeoulNow, formatAmountWithComma } from '@/lib/utils';
 import type { Product } from '@/types';
 
 const productSchema = z.object({
@@ -88,13 +88,6 @@ export default function ProductsPage() {
   });
 
   const watchCategoryId = watch('category_id');
-
-  // 천단위 콤마 포맷 함수
-  const formatAmountWithComma = (value: string) => {
-    const numericValue = value.replace(/[^0-9]/g, '');
-    if (!numericValue) return '';
-    return Number(numericValue).toLocaleString('ko-KR');
-  };
 
   useEffect(() => {
     if (watchCategoryId && watchCategoryId !== selectedCategoryId) {

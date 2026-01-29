@@ -33,7 +33,7 @@ import {
   Badge,
 } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
-import { formatCurrency, getAccountTypeLabel, getAccountTypeColor } from '@/lib/utils';
+import { formatCurrency, getAccountTypeLabel, getAccountTypeColor, formatAmountWithComma } from '@/lib/utils';
 import type { Account, AccountType } from '@/types';
 
 const accountSchema = z.object({
@@ -66,16 +66,6 @@ const badgeColors = [
   { value: '#EC4899', label: '핑크' },
   { value: '#78716C', label: '갈색' },
 ];
-
-// 천단위 콤마 포맷 함수
-const formatAmountWithComma = (value: string) => {
-  // 숫자와 마이너스 기호만 허용
-  const numericValue = value.replace(/[^0-9-]/g, '');
-  if (!numericValue || numericValue === '-') return numericValue;
-  const num = parseInt(numericValue, 10);
-  if (isNaN(num)) return '';
-  return num.toLocaleString('ko-KR');
-};
 
 function SortableAccountItem({
   account,

@@ -25,7 +25,7 @@ import { useExpenses } from '@/hooks/useExpenses';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories, useProducts } from '@/hooks/useCategories';
 import { useStores } from '@/hooks/useStores';
-import { formatCurrency, formatDateTime, toSeoulDateTimeLocal, getSeoulNow } from '@/lib/utils';
+import { formatCurrency, formatDateTime, toSeoulDateTimeLocal, getSeoulNow, formatAmountWithComma, getDateRange, formatLocalDate } from '@/lib/utils';
 import type { Expense, ExpensePhoto } from '@/types';
 
 const expenseSchema = z.object({
@@ -41,49 +41,6 @@ const expenseSchema = z.object({
 });
 
 type ExpenseForm = z.infer<typeof expenseSchema>;
-
-// 로컬 날짜를 YYYY-MM-DD 형식으로 포맷 (컴포넌트 외부)
-const formatLocalDate = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-// 날짜 프리셋 계산 함수 (컴포넌트 외부)
-const getDateRange = (preset: string) => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const dayOfWeek = today.getDay();
-
-  switch (preset) {
-    case 'this_week': {
-      // 월요일(1)부터 일요일(0)까지
-      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      const startOfWeek = new Date(year, month, today.getDate() + diffToMonday);
-      const endOfWeek = new Date(year, month, today.getDate() + diffToMonday + 6);
-      return {
-        start: formatLocalDate(startOfWeek),
-        end: formatLocalDate(endOfWeek),
-      };
-    }
-    case 'this_month': {
-      return {
-        start: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        end: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`,
-      };
-    }
-    case 'this_year': {
-      return {
-        start: `${year}-01-01`,
-        end: `${year}-12-31`,
-      };
-    }
-    default:
-      return { start: '', end: '' };
-  }
-};
 
 const PAGE_SIZE = 100;
 
@@ -205,15 +162,6 @@ export default function ExpensesPage() {
 
   const watchCategoryId = watch('category_id');
   const watchSubcategoryId = watch('subcategory_id');
-
-  // 천단위 콤마 포맷 함수 (음수 허용)
-  const formatAmountWithComma = (value: string) => {
-    const isNegative = value.startsWith('-');
-    const numericValue = value.replace(/[^0-9]/g, '');
-    if (!numericValue) return isNegative ? '-' : '';
-    const formatted = Number(numericValue).toLocaleString('ko-KR');
-    return isNegative ? `-${formatted}` : formatted;
-  };
 
   useEffect(() => {
     if (watchCategoryId && watchCategoryId !== selectedCategoryId) {
