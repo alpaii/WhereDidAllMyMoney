@@ -31,6 +31,7 @@ class User(Base):
     products = relationship("Product", back_populates="user", cascade="all, delete-orphan")
     stores = relationship("Store", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    maintenance_fees = relationship("MaintenanceFee", back_populates="user", cascade="all, delete-orphan")
 
 
 class RefreshToken(Base):

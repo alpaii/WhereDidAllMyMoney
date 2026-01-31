@@ -253,3 +253,105 @@ export interface PaginatedResponse<T> {
   size: number;
   pages: number;
 }
+
+// =====================
+// Maintenance Fee types (관리비)
+// =====================
+
+// 관리비 장소 (집, 사무실 등)
+export interface MaintenanceFee {
+  id: string;
+  user_id: string;
+  name: string;
+  address?: string;
+  memo?: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface MaintenanceFeeCreate {
+  name: string;
+  address?: string | null;
+  memo?: string | null;
+  is_active?: boolean;
+}
+
+export interface MaintenanceFeeUpdate {
+  name?: string;
+  address?: string | null;
+  memo?: string | null;
+  is_active?: boolean;
+}
+
+// 관리비 상세 항목
+export interface MaintenanceFeeDetail {
+  id: string;
+  record_id: string;
+  category: string;  // 관리비, 에너지, 기타
+  item_name: string;  // 일반관리비, 전기료 등
+  amount: number;
+  usage_amount?: number;  // 사용량 (241 kWh 등)
+  usage_unit?: string;  // 단위 (kWh, ㎥, MJ 등)
+  is_vat_included: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface MaintenanceFeeDetailCreate {
+  category: string;
+  item_name: string;
+  amount: number;
+  usage_amount?: number | null;
+  usage_unit?: string | null;
+  is_vat_included?: boolean;
+}
+
+// 월별 관리비 기록
+export interface MaintenanceFeeRecord {
+  id: string;
+  maintenance_fee_id: string;
+  year_month: string;  // "2025-11"
+  total_amount: number;
+  due_date?: string;
+  paid_date?: string;
+  is_paid: boolean;
+  memo?: string;
+  created_at: string;
+  updated_at?: string;
+  details?: MaintenanceFeeDetail[];
+}
+
+export interface MaintenanceFeeRecordCreate {
+  year_month: string;
+  total_amount?: number;
+  due_date?: string | null;
+  paid_date?: string | null;
+  is_paid?: boolean;
+  memo?: string | null;
+  details?: MaintenanceFeeDetailCreate[];
+}
+
+export interface MaintenanceFeeRecordUpdate {
+  year_month?: string;
+  total_amount?: number;
+  due_date?: string | null;
+  paid_date?: string | null;
+  is_paid?: boolean;
+  memo?: string | null;
+}
+
+// 통계
+export interface MaintenanceFeeStatsByMonth {
+  year_month: string;
+  total_amount: number;
+}
+
+export interface MaintenanceFeeStatsByItem {
+  year_month: string;
+  item_name: string;
+  amount: number;
+  usage_amount?: number;
+  usage_unit?: string;
+}

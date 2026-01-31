@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, accounts, transfers, categories, expenses, statistics, admin, stores
+from app.api.v1.endpoints import auth, accounts, transfers, categories, expenses, statistics, admin, stores, maintenance_fees
 
 api_router = APIRouter()
 
@@ -11,3 +11,4 @@ api_router.include_router(categories.router, prefix="/categories", tags=["카테
 api_router.include_router(expenses.router, prefix="/expenses", tags=["지출"])
 api_router.include_router(statistics.router, prefix="/statistics", tags=["통계"])
 api_router.include_router(admin.router, prefix="/admin", tags=["관리자"])
+api_router.include_router(maintenance_fees.router, prefix="/maintenance-fees", tags=["관리비"])
