@@ -196,7 +196,7 @@ export default function MaintenanceFeeRecordDetailPage() {
               </h2>
               <p className="text-gray-500 mt-1">{formatYearMonth(yearMonth)} 관리비</p>
               {record?.memo && (
-                <p className="text-sm text-gray-400 mt-2">{record.memo}</p>
+                <p className="text-sm text-gray-400 mt-2 whitespace-pre-line">{record.memo}</p>
               )}
             </div>
           </CardContent>
