@@ -6,6 +6,9 @@ import type {
   MaintenanceFee,
   MaintenanceFeeCreate,
   MaintenanceFeeUpdate,
+  MaintenanceFeeItemTemplate,
+  MaintenanceFeeItemTemplateCreate,
+  MaintenanceFeeItemTemplateUpdate,
   MaintenanceFeeRecord,
   MaintenanceFeeRecordCreate,
   MaintenanceFeeRecordUpdate,
@@ -83,6 +86,87 @@ export function useMaintenanceFees() {
     updateFee,
     deleteFee,
     updateFeeOrder,
+  };
+}
+
+// 항목 템플릿 관리 훅
+export function useItemTemplates(feeId: string | null) {
+  const [templates, setTemplates] = useState<MaintenanceFeeItemTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTemplates = useCallback(async () => {
+    if (!feeId) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<MaintenanceFeeItemTemplate[]>(`/maintenance-fees/${feeId}/item-templates`);
+      setTemplates(response.data);
+    } catch (err) {
+      setError('항목 템플릿을 불러오는데 실패했습니다.');
+      console.error('Failed to fetch item templates:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [feeId]);
+
+  const createTemplate = async (data: MaintenanceFeeItemTemplateCreate) => {
+    if (!feeId) throw new Error('feeId is required');
+    const response = await api.post<MaintenanceFeeItemTemplate>(`/maintenance-fees/${feeId}/item-templates`, data);
+    setTemplates((prev) => [...prev, response.data]);
+    return response.data;
+  };
+
+  const updateTemplate = async (templateId: string, data: MaintenanceFeeItemTemplateUpdate) => {
+    if (!feeId) throw new Error('feeId is required');
+    const response = await api.patch<MaintenanceFeeItemTemplate>(
+      `/maintenance-fees/${feeId}/item-templates/${templateId}`,
+      data
+    );
+    setTemplates((prev) =>
+      prev.map((t) => (t.id === templateId ? response.data : t))
+    );
+    return response.data;
+  };
+
+  const deleteTemplate = async (templateId: string) => {
+    if (!feeId) throw new Error('feeId is required');
+    await api.delete(`/maintenance-fees/${feeId}/item-templates/${templateId}`);
+    setTemplates((prev) => prev.filter((t) => t.id !== templateId));
+  };
+
+  const updateTemplateOrder = async (orderUpdate: { id: string; sort_order: number }[]) => {
+    if (!feeId) throw new Error('feeId is required');
+    await api.put(`/maintenance-fees/${feeId}/item-templates/order`, { items: orderUpdate });
+    setTemplates((prev) => {
+      const newTemplates = [...prev];
+      orderUpdate.forEach((item) => {
+        const template = newTemplates.find((t) => t.id === item.id);
+        if (template) {
+          template.sort_order = item.sort_order;
+        }
+      });
+      return newTemplates.sort((a, b) => a.sort_order - b.sort_order);
+    });
+  };
+
+  useEffect(() => {
+    if (feeId) {
+      fetchTemplates();
+    } else {
+      setTemplates([]);
+    }
+  }, [feeId, fetchTemplates]);
+
+  return {
+    templates,
+    isLoading,
+    error,
+    fetchTemplates,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
+    updateTemplateOrder,
   };
 }
 
@@ -167,11 +251,11 @@ export function useMaintenanceFeeRecords(feeId: string | null) {
     return response.data;
   };
 
-  const getStatsByItem = async (itemName: string): Promise<MaintenanceFeeStatsByItem[]> => {
+  const getStatsByItem = async (itemTemplateId: string): Promise<MaintenanceFeeStatsByItem[]> => {
     if (!feeId) throw new Error('feeId is required');
     const response = await api.get<MaintenanceFeeStatsByItem[]>(
       `/maintenance-fees/${feeId}/statistics/items`,
-      { params: { item_name: itemName } }
+      { params: { item_template_id: itemTemplateId } }
     );
     return response.data;
   };

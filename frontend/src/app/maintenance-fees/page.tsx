@@ -86,6 +86,9 @@ function SortableFeeItem({
               <span className="truncate">{fee.address}</span>
             </span>
           )}
+          {fee.memo && (
+            <p className="text-sm text-gray-400 mt-1 ml-7 line-clamp-2">{fee.memo}</p>
+          )}
         </Link>
       </div>
       <div className="flex items-center gap-1">

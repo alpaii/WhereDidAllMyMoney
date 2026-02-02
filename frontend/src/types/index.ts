@@ -258,6 +258,24 @@ export interface PaginatedResponse<T> {
 // Maintenance Fee types (관리비)
 // =====================
 
+// 관리비 항목 템플릿
+export interface MaintenanceFeeItemTemplate {
+  id: string;
+  maintenance_fee_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface MaintenanceFeeItemTemplateCreate {
+  name: string;
+}
+
+export interface MaintenanceFeeItemTemplateUpdate {
+  name?: string;
+}
+
 // 관리비 장소 (집, 사무실 등)
 export interface MaintenanceFee {
   id: string;
@@ -265,6 +283,7 @@ export interface MaintenanceFee {
   name: string;
   address?: string;
   memo?: string;
+  item_templates?: MaintenanceFeeItemTemplate[];  // 항목 템플릿 목록
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -289,8 +308,8 @@ export interface MaintenanceFeeUpdate {
 export interface MaintenanceFeeDetail {
   id: string;
   record_id: string;
-  category: string;  // 관리비, 에너지, 기타
-  item_name: string;  // 일반관리비, 전기료 등
+  item_template_id: string;
+  item_template?: MaintenanceFeeItemTemplate;
   amount: number;
   usage_amount?: number;  // 사용량 (241 kWh 등)
   usage_unit?: string;  // 단위 (kWh, ㎥, MJ 등)
@@ -300,8 +319,7 @@ export interface MaintenanceFeeDetail {
 }
 
 export interface MaintenanceFeeDetailCreate {
-  category: string;
-  item_name: string;
+  item_template_id: string;
   amount: number;
   usage_amount?: number | null;
   usage_unit?: string | null;

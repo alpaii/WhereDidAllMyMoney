@@ -24,6 +24,23 @@ class MaintenanceFee(Base):
     # Relationships
     user = relationship("User", back_populates="maintenance_fees")
     records = relationship("MaintenanceFeeRecord", back_populates="maintenance_fee", cascade="all, delete-orphan")
+    item_templates = relationship("MaintenanceFeeItemTemplate", back_populates="maintenance_fee", cascade="all, delete-orphan", order_by="MaintenanceFeeItemTemplate.sort_order")
+
+
+class MaintenanceFeeItemTemplate(Base):
+    """관리비 항목 템플릿"""
+    __tablename__ = "maintenance_fee_item_templates"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    maintenance_fee_id = Column(UUID(as_uuid=True), ForeignKey("maintenance_fees.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)  # 항목 이름
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    maintenance_fee = relationship("MaintenanceFee", back_populates="item_templates")
+    details = relationship("MaintenanceFeeDetail", back_populates="item_template")
 
 
 class MaintenanceFeeRecord(Base):
@@ -52,8 +69,7 @@ class MaintenanceFeeDetail(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     record_id = Column(UUID(as_uuid=True), ForeignKey("maintenance_fee_records.id", ondelete="CASCADE"), nullable=False, index=True)
-    category = Column(String(50), nullable=False)  # 관리비, 에너지, 기타
-    item_name = Column(String(100), nullable=False)  # 일반관리비, 전기료 등
+    item_template_id = Column(UUID(as_uuid=True), ForeignKey("maintenance_fee_item_templates.id", ondelete="CASCADE"), nullable=False, index=True)
     amount = Column(Numeric(15, 2), nullable=False, default=0)
     usage_amount = Column(Numeric(15, 2), nullable=True)  # 사용량 (241 kWh 등)
     usage_unit = Column(String(20), nullable=True)  # 단위 (kWh, ㎥, MJ 등)
@@ -63,3 +79,4 @@ class MaintenanceFeeDetail(Base):
 
     # Relationships
     record = relationship("MaintenanceFeeRecord", back_populates="details")
+    item_template = relationship("MaintenanceFeeItemTemplate", back_populates="details")

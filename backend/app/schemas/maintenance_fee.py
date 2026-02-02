@@ -6,6 +6,42 @@ from decimal import Decimal
 
 
 # =====================
+# MaintenanceFeeItemTemplate (관리비 항목 템플릿)
+# =====================
+
+class MaintenanceFeeItemTemplateBase(BaseModel):
+    name: str = Field(..., max_length=100)
+
+
+class MaintenanceFeeItemTemplateCreate(MaintenanceFeeItemTemplateBase):
+    pass
+
+
+class MaintenanceFeeItemTemplateUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=100)
+
+
+class MaintenanceFeeItemTemplateResponse(MaintenanceFeeItemTemplateBase):
+    id: UUID
+    maintenance_fee_id: UUID
+    sort_order: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class MaintenanceFeeItemTemplateOrderItem(BaseModel):
+    id: UUID
+    sort_order: int
+
+
+class MaintenanceFeeItemTemplateOrderUpdate(BaseModel):
+    items: List[MaintenanceFeeItemTemplateOrderItem]
+
+
+# =====================
 # MaintenanceFee (관리비 장소)
 # =====================
 
@@ -33,6 +69,7 @@ class MaintenanceFeeResponse(MaintenanceFeeBase):
     sort_order: int
     created_at: datetime
     updated_at: Optional[datetime]
+    item_templates: List[MaintenanceFeeItemTemplateResponse] = []
 
     class Config:
         from_attributes = True
@@ -88,8 +125,7 @@ class MaintenanceFeeRecordResponse(MaintenanceFeeRecordBase):
 # =====================
 
 class MaintenanceFeeDetailBase(BaseModel):
-    category: str = Field(..., max_length=50)  # 관리비, 에너지, 기타
-    item_name: str = Field(..., max_length=100)
+    item_template_id: UUID
     amount: Decimal = Field(default=0)
     usage_amount: Optional[Decimal] = None
     usage_unit: Optional[str] = Field(None, max_length=20)
@@ -101,8 +137,7 @@ class MaintenanceFeeDetailCreate(MaintenanceFeeDetailBase):
 
 
 class MaintenanceFeeDetailUpdate(BaseModel):
-    category: Optional[str] = Field(None, max_length=50)
-    item_name: Optional[str] = Field(None, max_length=100)
+    item_template_id: Optional[UUID] = None
     amount: Optional[Decimal] = None
     usage_amount: Optional[Decimal] = None
     usage_unit: Optional[str] = Field(None, max_length=20)
@@ -114,6 +149,7 @@ class MaintenanceFeeDetailResponse(MaintenanceFeeDetailBase):
     record_id: UUID
     sort_order: int
     created_at: datetime
+    item_template: Optional[MaintenanceFeeItemTemplateResponse] = None
 
     class Config:
         from_attributes = True
@@ -154,12 +190,6 @@ class MaintenanceFeeRecordWithDetailsCreate(MaintenanceFeeRecordCreate):
 class MaintenanceFeeStatsByMonth(BaseModel):
     """월별 관리비 통계"""
     year_month: str
-    total_amount: Decimal
-
-
-class MaintenanceFeeStatsByCategory(BaseModel):
-    """카테고리별 관리비 통계"""
-    category: str
     total_amount: Decimal
 
 
