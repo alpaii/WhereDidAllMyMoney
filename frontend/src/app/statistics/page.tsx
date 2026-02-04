@@ -27,11 +27,13 @@ export default function StatisticsPage() {
   const {
     monthlySummary,
     categorySummary,
+    accountSummary,
     dailyExpenses,
     monthlyExpenses,
     isLoading,
     fetchMonthlySummary,
     fetchCategorySummary,
+    fetchAccountSummary,
     fetchDailyExpenses,
     fetchMonthlyExpenses,
   } = useStatistics();
@@ -47,6 +49,7 @@ export default function StatisticsPage() {
 
     fetchMonthlySummary(year, month);
     fetchCategorySummary(year, month);
+    fetchAccountSummary(year, month);
     fetchDailyExpenses(year, month);
     fetchMonthlyExpenses(year);
   }, [year, month]);
@@ -253,6 +256,75 @@ export default function StatisticsPage() {
                         style={{
                           width: `${Number(cat.percentage)}%`,
                           backgroundColor: COLORS[index % COLORS.length],
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Account details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>계좌별 상세</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 bg-gray-100 animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : accountSummary.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                데이터가 없습니다
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {accountSummary.map((acc, index) => (
+                  <div key={acc.account_id}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {acc.badge_color ? (
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-medium text-white"
+                            style={{ backgroundColor: acc.badge_color }}
+                          >
+                            {acc.account_name}
+                          </span>
+                        ) : (
+                          <>
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            />
+                            <span className="text-gray-700">
+                              {acc.account_name}
+                            </span>
+                          </>
+                        )}
+                        <span className="text-sm text-gray-500">
+                          ({acc.expense_count}건)
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-medium text-gray-800">
+                          {formatCurrency(acc.total_amount)}
+                        </span>
+                        <span className="text-sm text-gray-500 ml-2">
+                          ({Number(acc.percentage).toFixed(1)}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full transition-all"
+                        style={{
+                          width: `${Number(acc.percentage)}%`,
+                          backgroundColor: acc.badge_color || COLORS[index % COLORS.length],
                         }}
                       />
                     </div>

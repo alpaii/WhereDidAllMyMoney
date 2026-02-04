@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import api from '@/lib/api';
-import type { MonthlySummary, CategorySummary, DailyExpense } from '@/types';
+import type { MonthlySummary, CategorySummary, DailyExpense, AccountSummary } from '@/types';
 
 interface MonthlyExpense {
   period: string;
@@ -11,6 +11,7 @@ interface MonthlyExpense {
 export function useStatistics() {
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary | null>(null);
   const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
+  const [accountSummary, setAccountSummary] = useState<AccountSummary[]>([]);
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpense[]>([]);
   const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +48,25 @@ export function useStatistics() {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || '카테고리별 통계를 불러오는데 실패했습니다');
       setCategorySummary([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchAccountSummary = useCallback(async (year: number, month: number) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<AccountSummary[]>(
+        `/statistics/account/${year}/${month}`
+      );
+      setAccountSummary(Array.isArray(response.data) ? response.data : []);
+      return response.data;
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || '계좌별 통계를 불러오는데 실패했습니다');
+      setAccountSummary([]);
       return [];
     } finally {
       setIsLoading(false);
@@ -99,12 +119,14 @@ export function useStatistics() {
   return {
     monthlySummary,
     categorySummary,
+    accountSummary,
     dailyExpenses,
     monthlyExpenses,
     isLoading,
     error,
     fetchMonthlySummary,
     fetchCategorySummary,
+    fetchAccountSummary,
     fetchDailyExpenses,
     fetchMonthlyExpenses,
   };

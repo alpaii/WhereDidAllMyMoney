@@ -199,6 +199,15 @@ export interface DailyExpense {
   expense_count: number;
 }
 
+export interface AccountSummary {
+  account_id: string;
+  account_name: string;
+  badge_color?: string;
+  total_amount: number;
+  expense_count: number;
+  percentage: number;
+}
+
 // Store types
 export interface Store {
   id: string;

@@ -11,6 +11,7 @@ from uuid import UUID
 from app.db.database import get_db
 from app.models.user import User
 from app.models.category import Category
+from app.models.account import Account
 from app.models.expense import Expense
 from app.schemas.expense import (
     ExpenseStatsByCategory, ExpenseStatsByPeriod, ExpenseSummary
@@ -42,6 +43,15 @@ class DailyExpenseResponse(BaseModel):
     date: str
     total_amount: Decimal
     expense_count: int
+
+
+class AccountSummaryResponse(BaseModel):
+    account_id: str
+    account_name: str
+    badge_color: Optional[str] = None
+    total_amount: Decimal
+    expense_count: int
+    percentage: Decimal
 
 
 @router.get("/summary", response_model=ExpenseSummary)
@@ -351,6 +361,61 @@ async def get_daily_expenses(
             date=str(row.date),
             total_amount=Decimal(str(row.total)),
             expense_count=row.count
+        )
+        for row in result.all()
+    ]
+
+
+@router.get("/account/{year}/{month}", response_model=list[AccountSummaryResponse])
+async def get_account_summary(
+    year: int,
+    month: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """월별 계좌별 지출 통계"""
+    _, last_day = monthrange(year, month)
+    start_date = datetime(year, month, 1)
+    end_date = datetime(year, month, last_day, 23, 59, 59)
+
+    conditions = [
+        Expense.user_id == current_user.id,
+        Expense.expense_at >= start_date,
+        Expense.expense_at <= end_date
+    ]
+
+    # Get total for percentage calculation
+    total_query = select(
+        func.coalesce(func.sum(Expense.amount), 0).label("total")
+    ).where(*conditions)
+    total_result = await db.execute(total_query)
+    total_amount = Decimal(str(total_result.scalar_one()))
+
+    # Get by account
+    query = (
+        select(
+            Account.id,
+            Account.name,
+            Account.badge_color,
+            func.coalesce(func.sum(Expense.amount), 0).label("total"),
+            func.count(Expense.id).label("count")
+        )
+        .join(Expense, Expense.account_id == Account.id)
+        .where(*conditions)
+        .group_by(Account.id, Account.name, Account.badge_color)
+        .order_by(func.sum(Expense.amount).desc())
+    )
+
+    result = await db.execute(query)
+
+    return [
+        AccountSummaryResponse(
+            account_id=str(row.id),
+            account_name=row.name,
+            badge_color=row.badge_color,
+            total_amount=Decimal(str(row.total)),
+            expense_count=row.count,
+            percentage=(Decimal(str(row.total)) / total_amount * 100).quantize(Decimal("0.01")) if total_amount > 0 else Decimal("0")
         )
         for row in result.all()
     ]
