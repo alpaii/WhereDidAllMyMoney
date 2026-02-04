@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Camera, X } from 'lucide-react';
+import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Camera, X, LayoutGrid } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -113,6 +113,14 @@ export default function ExpensesPage() {
   const [modalSatisfaction, setModalSatisfaction] = useState<boolean | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 계층형 지출 추가 모달 상태
+  const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
+  const [quickAddStep, setQuickAddStep] = useState<'category' | 'subcategory' | 'product'>('category');
+  const [quickAddCategoryId, setQuickAddCategoryId] = useState<string | null>(null);
+  const [quickAddSubcategoryId, setQuickAddSubcategoryId] = useState<string | null>(null);
+  const [isQuickAdding, setIsQuickAdding] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   // 라이트박스 상태
   const [lightboxPhotos, setLightboxPhotos] = useState<ExpensePhoto[]>([]);
@@ -392,6 +400,104 @@ export default function ExpensesPage() {
     return `${apiBaseUrl}/${filePath}`;
   };
 
+  // 계층형 지출 추가 모달 핸들러
+  const openQuickAddModal = () => {
+    setQuickAddStep('category');
+    setQuickAddCategoryId(null);
+    setQuickAddSubcategoryId(null);
+    setIsQuickAddModalOpen(true);
+  };
+
+  const closeQuickAddModal = () => {
+    setIsQuickAddModalOpen(false);
+    setQuickAddStep('category');
+    setQuickAddCategoryId(null);
+    setQuickAddSubcategoryId(null);
+  };
+
+  const handleQuickAddBack = () => {
+    if (quickAddStep === 'product') {
+      setQuickAddStep('subcategory');
+      setQuickAddSubcategoryId(null);
+    } else if (quickAddStep === 'subcategory') {
+      setQuickAddStep('category');
+      setQuickAddCategoryId(null);
+    }
+  };
+
+  const handleQuickAddCategorySelect = (categoryId: string) => {
+    setQuickAddCategoryId(categoryId);
+    setQuickAddStep('subcategory');
+  };
+
+  const handleQuickAddSubcategorySelect = (subcategoryId: string) => {
+    setQuickAddSubcategoryId(subcategoryId);
+    setQuickAddStep('product');
+  };
+
+  const handleQuickAddProductSelect = async (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    if (!product.default_account_id) {
+      alert('계좌가 설정되지 않은 상품입니다.');
+      return;
+    }
+    if (!product.default_price) {
+      alert('가격이 설정되지 않은 상품입니다.');
+      return;
+    }
+
+    // 카테고리 ID 찾기
+    const category = categories.find(cat =>
+      cat.subcategories?.some(sub => sub.id === product.subcategory_id)
+    );
+    if (!category) {
+      alert('카테고리 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      setIsQuickAdding(true);
+      await createExpense({
+        account_id: product.default_account_id,
+        category_id: category.id,
+        subcategory_id: product.subcategory_id,
+        product_id: product.id,
+        amount: Number(product.default_price),
+        expense_at: getSeoulNow(),
+      });
+      closeQuickAddModal();
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+      alert('지출 추가에 실패했습니다.');
+    } finally {
+      setIsQuickAdding(false);
+    }
+  };
+
+  // 모바일 스와이프 핸들러
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchEndX - touchStartX;
+    // 오른쪽으로 50px 이상 스와이프하면 뒤로가기
+    if (diff > 50 && quickAddStep !== 'category') {
+      handleQuickAddBack();
+    }
+    setTouchStartX(null);
+  };
+
+  // 계층형 모달에서 사용할 데이터
+  const quickAddCategory = quickAddCategoryId ? categories.find(c => c.id === quickAddCategoryId) : null;
+  const quickAddSubcategories = quickAddCategory?.subcategories || [];
+  const quickAddProducts = quickAddSubcategoryId ? products.filter(p => p.subcategory_id === quickAddSubcategoryId) : [];
+
   const accountOptions = accounts.map((acc) => ({ value: acc.id, label: acc.name }));
 
   const categoryOptions = categories.map((cat) => ({ value: cat.id, label: cat.name }));
@@ -490,9 +596,14 @@ export default function ExpensesPage() {
     <DashboardLayout
       title="지출 내역"
       action={
-        <Button onClick={openCreateModal} size="icon" title="지출 추가">
-          <Plus size={20} />
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={openQuickAddModal} size="icon" variant="secondary" title="빠른 지출 추가">
+            <LayoutGrid size={20} />
+          </Button>
+          <Button onClick={openCreateModal} size="icon" title="지출 추가">
+            <Plus size={20} />
+          </Button>
+        </div>
       }
     >
       <div className="space-y-4">
@@ -1054,6 +1165,119 @@ export default function ExpensesPage() {
               </div>
             </div>
           </form>
+        </Modal>
+
+        {/* 계층형 지출 추가 모달 */}
+        <Modal
+          isOpen={isQuickAddModalOpen}
+          onClose={closeQuickAddModal}
+          title={
+            quickAddStep === 'category' ? '카테고리 선택' :
+            quickAddStep === 'subcategory' ? (quickAddCategory?.name || '서브카테고리 선택') :
+            '상품 선택'
+          }
+          size="lg"
+        >
+          <div
+            className="min-h-[300px]"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* 뒤로가기 버튼 */}
+            {quickAddStep !== 'category' && (
+              <button
+                onClick={handleQuickAddBack}
+                className="flex items-center gap-1 text-gray-500 hover:text-gray-700 mb-4"
+              >
+                <ChevronLeft size={20} />
+                <span>뒤로</span>
+              </button>
+            )}
+
+            {/* 카테고리 목록 */}
+            {quickAddStep === 'category' && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleQuickAddCategorySelect(category.id)}
+                    className="p-4 text-center bg-gray-50 hover:bg-primary-50 hover:border-primary-300 border border-gray-200 rounded-lg transition-colors"
+                  >
+                    <span className="font-medium text-gray-800">{category.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 서브카테고리 목록 */}
+            {quickAddStep === 'subcategory' && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {quickAddSubcategories.map((subcategory) => (
+                  <button
+                    key={subcategory.id}
+                    onClick={() => handleQuickAddSubcategorySelect(subcategory.id)}
+                    className="p-4 text-center bg-gray-50 hover:bg-primary-50 hover:border-primary-300 border border-gray-200 rounded-lg transition-colors"
+                  >
+                    <span className="font-medium text-gray-800">{subcategory.name}</span>
+                  </button>
+                ))}
+                {quickAddSubcategories.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-gray-500">
+                    서브카테고리가 없습니다
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 상품 목록 */}
+            {quickAddStep === 'product' && (
+              <div className="space-y-2">
+                {quickAddProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => handleQuickAddProductSelect(product.id)}
+                    disabled={isQuickAdding || !product.default_account_id || !product.default_price}
+                    className={`w-full p-4 text-left border rounded-lg transition-colors flex items-center justify-between ${
+                      !product.default_account_id || !product.default_price
+                        ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-50 hover:bg-green-50 hover:border-green-300 border-gray-200'
+                    }`}
+                  >
+                    <div>
+                      <span className="font-medium text-gray-800">{product.name}</span>
+                      {product.memo && (
+                        <p className="text-sm text-gray-500 mt-1">{product.memo}</p>
+                      )}
+                      {(!product.default_account_id || !product.default_price) && (
+                        <p className="text-xs text-red-400 mt-1">
+                          {!product.default_account_id && '계좌 미설정'}
+                          {!product.default_account_id && !product.default_price && ' / '}
+                          {!product.default_price && '가격 미설정'}
+                        </p>
+                      )}
+                    </div>
+                    {product.default_price && (
+                      <span className="font-mono font-medium text-primary-600">
+                        {formatCurrency(Number(product.default_price))}
+                      </span>
+                    )}
+                  </button>
+                ))}
+                {quickAddProducts.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    등록된 상품이 없습니다
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 취소 버튼 */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <Button variant="secondary" onClick={closeQuickAddModal} className="w-full">
+                취소
+              </Button>
+            </div>
+          </div>
         </Modal>
 
       </div>
