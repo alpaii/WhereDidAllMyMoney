@@ -36,6 +36,7 @@ THUMBNAIL_SIZE = (200, 200)
 async def get_expenses(
     account_id: Optional[UUID] = None,
     category_id: Optional[UUID] = None,
+    store_id: Optional[UUID] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     page: int = Query(default=1, ge=1),
@@ -51,6 +52,8 @@ async def get_expenses(
         conditions.append(Expense.account_id == account_id)
     if category_id:
         conditions.append(Expense.category_id == category_id)
+    if store_id:
+        conditions.append(Expense.store_id == store_id)
     if start_date:
         conditions.append(Expense.expense_at >= datetime.combine(start_date, datetime.min.time()))
     if end_date:

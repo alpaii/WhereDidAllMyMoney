@@ -62,6 +62,8 @@ export default function ExpensesPage() {
   const [filterCategoryId, setFilterCategoryId] = useState<string>('');
   const [filterSubcategoryId, setFilterSubcategoryId] = useState<string>('');
   const [filterProductId, setFilterProductId] = useState<string>('');
+  const [filterAccountId, setFilterAccountId] = useState<string>('');
+  const [filterStoreId, setFilterStoreId] = useState<string>('');
 
   // 클라이언트에서 초기 날짜 설정 (SSR 시간대 문제 방지)
   useEffect(() => {
@@ -309,7 +311,7 @@ export default function ExpensesPage() {
       setLastSelectedSubcategoryId(data.subcategory_id);
       localStorage.setItem('lastSelectedSubcategoryId', data.subcategory_id);
       handleClose();
-      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to save expense:', error);
     } finally {
@@ -344,7 +346,7 @@ export default function ExpensesPage() {
         purchase_url: expense.purchase_url || null,
         expense_at: getSeoulNow(),
       });
-      fetchExpenses();
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to copy expense:', error);
     }
@@ -358,7 +360,7 @@ export default function ExpensesPage() {
       setIsUploadingPhoto(true);
       await uploadPhoto(editingExpense.id, file);
       // Refresh expenses to get updated photos
-      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to upload photo:', error);
       alert('사진 업로드에 실패했습니다.');
@@ -376,7 +378,7 @@ export default function ExpensesPage() {
 
     try {
       await deletePhoto(editingExpense.id, photoId);
-      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to delete photo:', error);
       alert('사진 삭제에 실패했습니다.');
@@ -479,8 +481,10 @@ export default function ExpensesPage() {
       startDate: filterStartDate,
       endDate: filterEndDate,
       categoryId: filterCategoryId || undefined,
+      accountId: filterAccountId || undefined,
+      storeId: filterStoreId || undefined,
     });
-  }, [page, filterStartDate, filterEndDate, filterCategoryId, fetchExpenses]);
+  }, [page, filterStartDate, filterEndDate, filterCategoryId, filterAccountId, filterStoreId, fetchExpenses]);
 
   return (
     <DashboardLayout
@@ -554,6 +558,29 @@ export default function ExpensesPage() {
                 value={filterProductId}
                 onChange={(e) => setFilterProductId(e.target.value)}
                 disabled={!filterSubcategoryId}
+              />
+            </div>
+            {/* 계좌/매장 필터 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                id="filter-account"
+                label="계좌"
+                options={[
+                  { value: '', label: '전체 계좌' },
+                  ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
+                ]}
+                value={filterAccountId}
+                onChange={(e) => setFilterAccountId(e.target.value)}
+              />
+              <Select
+                id="filter-store"
+                label="매장"
+                options={[
+                  { value: '', label: '전체 매장' },
+                  ...stores.map((store) => ({ value: store.id, label: store.name })),
+                ]}
+                value={filterStoreId}
+                onChange={(e) => setFilterStoreId(e.target.value)}
               />
             </div>
           </CardContent>

@@ -9,6 +9,7 @@ interface UseExpensesOptions {
   endDate?: string;
   categoryId?: string;
   accountId?: string;
+  storeId?: string;
 }
 
 interface PaginatedExpenseResponse {
@@ -43,6 +44,7 @@ export function useExpenses(options: UseExpensesOptions = {}) {
       if (opts?.endDate) params.append('end_date', opts.endDate);
       if (opts?.categoryId) params.append('category_id', opts.categoryId);
       if (opts?.accountId) params.append('account_id', opts.accountId);
+      if (opts?.storeId) params.append('store_id', opts.storeId);
 
       const response = await api.get<PaginatedExpenseResponse>(
         `/expenses/?${params.toString()}`
