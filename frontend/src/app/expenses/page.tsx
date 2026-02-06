@@ -801,11 +801,14 @@ export default function ExpensesPage() {
                           )}
                         </p>
                         {expense.product_name && (
-                          <p className="text-sm text-gray-800 font-semibold flex items-center gap-1">
+                          <p className="text-base text-gray-800 font-semibold flex items-center gap-1">
                             {expense.satisfaction === true && <ThumbsUp size={14} className="text-green-600" />}
                             {expense.satisfaction === false && <ThumbsDown size={14} className="text-red-600" />}
                             {expense.product_name}
                           </p>
+                        )}
+                        {expense.store_name && (
+                          <p className="text-gray-500">{expense.store_name}</p>
                         )}
                         <p className="text-sm text-[rgb(161,25,25)] font-mono">
                           {formatDateTime(expense.expense_at)}
@@ -905,13 +908,16 @@ export default function ExpensesPage() {
                       <TableCell className={`text-right font-medium font-mono ${Number(expense.amount) < 0 ? 'text-red-600' : ''}`}>
                         {formatCurrency(Number(expense.amount))}
                       </TableCell>
-                      <TableCell className="text-gray-800 font-semibold break-words">
+                      <TableCell className="text-gray-800 font-semibold break-words text-[1.05rem]">
                         <div>
                           <span className="flex items-center gap-1">
                             {expense.satisfaction === true && <ThumbsUp size={14} className="text-green-600 flex-shrink-0" />}
                             {expense.satisfaction === false && <ThumbsDown size={14} className="text-red-600 flex-shrink-0" />}
                             {expense.product_name || '-'}
                           </span>
+                          {expense.store_name && (
+                            <p className="text-sm text-gray-500 font-normal">{expense.store_name}</p>
+                          )}
                           {expense.photos && expense.photos.length > 0 && (
                             <div className="flex gap-1 mt-2">
                               {expense.photos.map((photo, idx) => (
