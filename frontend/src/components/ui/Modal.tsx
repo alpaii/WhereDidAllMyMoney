@@ -10,10 +10,11 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -48,20 +49,20 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-[env(safe-area-inset-bottom)]">
       <div
-        className="absolute inset-0 bg-black/50"
+        className="fixed inset-0 bg-black/50"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
         className={cn(
-          'relative w-full mx-4 bg-white rounded-xl shadow-xl',
+          'relative w-full bg-white rounded-xl shadow-xl my-auto max-h-[85vh] flex flex-col',
           sizes[size]
         )}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
             <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
             <button
               onClick={onClose}
@@ -71,7 +72,17 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             </button>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div
+          className="p-6 overflow-y-auto flex-1 overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {children}
+        </div>
+        {footer && (
+          <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-white rounded-b-xl">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

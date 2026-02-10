@@ -1183,9 +1183,14 @@ export default function ExpensesPage() {
             '상품 선택'
           }
           size="lg"
+          footer={
+            <Button variant="secondary" onClick={closeQuickAddModal} className="w-full">
+              취소
+            </Button>
+          }
         >
           <div
-            className="min-h-[300px]"
+            className="min-h-[200px]"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -1276,13 +1281,6 @@ export default function ExpensesPage() {
                 )}
               </div>
             )}
-
-            {/* 취소 버튼 */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <Button variant="secondary" onClick={closeQuickAddModal} className="w-full">
-                취소
-              </Button>
-            </div>
           </div>
         </Modal>
 
