@@ -20,25 +20,66 @@
 | Database | PostgreSQL 15 |
 | Infra | Docker, Docker Compose |
 
+## 구성
+
+DB는 별도 머신(또는 별도 Docker Compose)에서 실행하고, 앱(Frontend + Backend)은 개발 머신에서 실행합니다.
+
+```
+[개발 머신 (아이맥)]                    [DB 서버 (맥미니)]
+┌─────────────────────┐                ┌──────────────────┐
+│  Frontend (:3000)   │                │  PostgreSQL      │
+│  Backend  (:8000)   │── socat ──────>│  (:5432)         │
+│  socat    (:5432)   │                │                  │
+└─────────────────────┘                └──────────────────┘
+```
+
 ## 실행 방법
 
-### Docker Compose (권장)
+### 1. DB 서버 (맥미니)
 
 ```bash
-# DB 실행
 docker compose -f docker-compose.db.yml up -d
+```
 
-# 앱 실행 (같은 머신의 DB 사용)
+### 2. 개발 머신 (아이맥)
+
+Docker Desktop for Mac 컨테이너는 로컬 LAN에 직접 접근할 수 없으므로, socat으로 포트 포워딩이 필요합니다.
+
+```bash
+# socat 설치 (최초 1회)
+brew install socat
+
+# 포트 포워딩 시작 (DB 서버 IP에 맞게 수정)
+socat TCP-LISTEN:5432,fork,reuseaddr TCP:192.168.50.153:5432 &
+
+# 앱 실행
 docker compose up -d
-
-# 다른 서버의 DB에 연결할 경우
-DB_HOST=192.168.1.100 docker compose up -d
 ```
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000/api/v1
 
-### 로컬 개발
+### 포트 포워딩 종료
+
+```bash
+# socat 프로세스 종료
+kill $(lsof -t -i:5432 -sTCP:LISTEN)
+```
+
+### DB 데이터 마이그레이션
+
+```bash
+# 현재 DB 덤프
+docker exec money_tracker_db pg_dump -U postgres money_tracker > db_dump.sql
+
+# 덤프 파일의 \restrict 줄 제거 (버전 호환성 문제 방지)
+sed -i '' '/^\\restrict/d' db_dump.sql
+
+# 새 DB에 복원
+docker exec -i money_tracker_db psql -U postgres money_tracker < db_dump.sql
+```
+
+### 로컬 개발 (Docker 없이)
 
 ```bash
 # Backend
@@ -51,3 +92,12 @@ cd frontend
 npm install
 npm run dev
 ```
+
+## 환경 설정 파일
+
+| 파일 | 용도 |
+|------|------|
+| `backend/.env` | DB 접속 정보, JWT 시크릿, CORS 등 |
+| `frontend/.env.local` | API URL, 외부 서비스 키 |
+| `docker-compose.yml` | 앱 (Frontend + Backend) |
+| `docker-compose.db.yml` | DB 단독 실행 |

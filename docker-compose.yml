@@ -6,6 +6,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: money_tracker_backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@${DB_HOST:-host.docker.internal}:5432/money_tracker
       - SECRET_KEY=your-super-secret-key-change-in-production

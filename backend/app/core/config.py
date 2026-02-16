@@ -21,8 +21,6 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://localhost:8000",
-        "http://100.75.148.39:3000",
-        "http://100.75.148.39:8000",
     ]
 
     # Uploads
