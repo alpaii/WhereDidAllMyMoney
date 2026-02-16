@@ -104,10 +104,10 @@ export default function ProductsPage() {
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setSelectedCategoryId(null);
+    setSelectedCategoryId(filterCategoryId || null);
     reset({
-      category_id: '',
-      subcategory_id: '',
+      category_id: filterCategoryId || '',
+      subcategory_id: filterSubcategoryId || '',
       name: '',
       default_price: '',
       default_account_id: '',
