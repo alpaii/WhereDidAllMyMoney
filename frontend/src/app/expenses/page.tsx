@@ -443,10 +443,6 @@ export default function ExpensesPage() {
       alert('계좌가 설정되지 않은 상품입니다.');
       return;
     }
-    if (!product.default_price) {
-      alert('가격이 설정되지 않은 상품입니다.');
-      return;
-    }
 
     // 카테고리 ID 찾기
     const category = categories.find(cat =>
@@ -464,7 +460,7 @@ export default function ExpensesPage() {
         category_id: category.id,
         subcategory_id: product.subcategory_id,
         product_id: product.id,
-        amount: Number(product.default_price),
+        amount: product.default_price ? Number(product.default_price) : 0,
         expense_at: getSeoulNow(),
       });
       closeQuickAddModal();
@@ -1247,9 +1243,9 @@ export default function ExpensesPage() {
                   <button
                     key={product.id}
                     onClick={() => handleQuickAddProductSelect(product.id)}
-                    disabled={isQuickAdding || !product.default_account_id || !product.default_price}
+                    disabled={isQuickAdding || !product.default_account_id}
                     className={`w-full p-4 text-left border rounded-lg transition-colors flex items-center justify-between ${
-                      !product.default_account_id || !product.default_price
+                      !product.default_account_id
                         ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
                         : 'bg-gray-50 hover:bg-green-50 hover:border-green-300 border-gray-200'
                     }`}
@@ -1259,19 +1255,13 @@ export default function ExpensesPage() {
                       {product.memo && (
                         <p className="text-sm text-gray-500 mt-1">{product.memo}</p>
                       )}
-                      {(!product.default_account_id || !product.default_price) && (
-                        <p className="text-xs text-red-400 mt-1">
-                          {!product.default_account_id && '계좌 미설정'}
-                          {!product.default_account_id && !product.default_price && ' / '}
-                          {!product.default_price && '가격 미설정'}
-                        </p>
+                      {!product.default_account_id && (
+                        <p className="text-xs text-red-400 mt-1">계좌 미설정</p>
                       )}
                     </div>
-                    {product.default_price && (
-                      <span className="font-mono font-medium text-primary-600">
-                        {formatCurrency(Number(product.default_price))}
-                      </span>
-                    )}
+                    <span className="font-mono font-medium text-primary-600">
+                      {product.default_price ? formatCurrency(Number(product.default_price)) : '0원'}
+                    </span>
                   </button>
                 ))}
                 {quickAddProducts.length === 0 && (
