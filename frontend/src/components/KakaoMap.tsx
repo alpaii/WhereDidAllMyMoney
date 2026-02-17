@@ -38,12 +38,16 @@ export function KakaoMap({ onSelectPlace, initialStore }: KakaoMapProps) {
   const infoWindowRef = useRef<any>(null);
   const placesServiceRef = useRef<any>(null);
 
+  const geocoderRef = useRef<any>(null);
+  const clickMarkerRef = useRef<any>(null);
+
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
   const [currentPosition, setCurrentPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
+  const [clickedPlace, setClickedPlace] = useState<StoreCreate | null>(null);
 
   // Load Kakao Maps SDK
   useEffect(() => {
@@ -171,6 +175,70 @@ export function KakaoMap({ onSelectPlace, initialStore }: KakaoMapProps) {
 
     // Initialize Places service
     placesServiceRef.current = new kakao.maps.services.Places();
+
+    // Initialize Geocoder (역지오코딩용)
+    geocoderRef.current = new kakao.maps.services.Geocoder();
+
+    // 지도 클릭 이벤트 - 직접 위치 지정
+    kakao.maps.event.addListener(mapInstanceRef.current, 'click', (mouseEvent: any) => {
+      const latlng = mouseEvent.latLng;
+      const lat = latlng.getLat();
+      const lng = latlng.getLng();
+
+      // 기존 검색 결과/클릭 마커 정리
+      markersRef.current.forEach(m => m.setMap(null));
+      markersRef.current = [];
+      setSearchResults([]);
+      setSelectedPlace(null);
+      if (infoWindowRef.current) infoWindowRef.current.close();
+
+      // 기존 클릭 마커 제거
+      if (clickMarkerRef.current) {
+        clickMarkerRef.current.setMap(null);
+      }
+
+      // 클릭 위치에 마커 표시
+      const marker = new kakao.maps.CustomOverlay({
+        position: latlng,
+        content: `<div style="
+          width: 36px; height: 36px;
+          background: #F97316;
+          border: 3px solid white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        "><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>`,
+        yAnchor: 0.5,
+        xAnchor: 0.5,
+      });
+      marker.setMap(mapInstanceRef.current);
+      clickMarkerRef.current = marker;
+
+      // 역지오코딩으로 주소 변환
+      geocoderRef.current.coord2Address(lng, lat, (result: any, status: any) => {
+        if (status === kakao.maps.services.Status.OK && result[0]) {
+          const addr = result[0];
+          const address = addr.address?.address_name || '';
+          const roadAddress = addr.road_address?.address_name || '';
+
+          setClickedPlace({
+            name: roadAddress || address,
+            address: address || null,
+            road_address: roadAddress || null,
+            latitude: lat,
+            longitude: lng,
+          });
+        } else {
+          setClickedPlace({
+            name: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+            latitude: lat,
+            longitude: lng,
+          });
+        }
+      });
+    });
   }, [isMapLoaded, currentPosition, initialStore]);
 
   // Clear markers
@@ -268,6 +336,11 @@ export function KakaoMap({ onSelectPlace, initialStore }: KakaoMapProps) {
     setIsSearching(true);
     clearMarkers();
     setSelectedPlace(null);
+    setClickedPlace(null);
+    if (clickMarkerRef.current) {
+      clickMarkerRef.current.setMap(null);
+      clickMarkerRef.current = null;
+    }
 
     // Search using Kakao Places API
     placesServiceRef.current.keywordSearch(
@@ -411,16 +484,23 @@ export function KakaoMap({ onSelectPlace, initialStore }: KakaoMapProps) {
         </div>
       )}
 
-      {/* Select button */}
+      {/* 안내 문구 */}
+      {searchResults.length === 0 && !selectedPlace && !clickedPlace && (
+        <p className="text-sm text-gray-400 text-center">
+          검색하거나, 지도를 직접 클릭하여 위치를 지정할 수 있습니다
+        </p>
+      )}
+
+      {/* 검색 결과 선택 버튼 */}
       {selectedPlace && (
         <Button
           type="button"
           onClick={() => {
             const storeData = convertToStoreCreate(selectedPlace);
             onSelectPlace(storeData);
-            // 선택 후 상태 초기화
             setSearchResults([]);
             setSelectedPlace(null);
+            setClickedPlace(null);
             setSearchQuery('');
             clearMarkers();
           }}
@@ -428,6 +508,42 @@ export function KakaoMap({ onSelectPlace, initialStore }: KakaoMapProps) {
         >
           "{selectedPlace.place_name}" 선택
         </Button>
+      )}
+
+      {/* 지도 클릭 위치 선택 버튼 */}
+      {clickedPlace && !selectedPlace && (
+        <div className="space-y-2">
+          <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+            <div className="text-sm font-medium text-orange-800">선택한 위치</div>
+            {clickedPlace.road_address && (
+              <div className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                <MapPin size={12} />
+                {clickedPlace.road_address}
+              </div>
+            )}
+            {clickedPlace.address && clickedPlace.address !== clickedPlace.road_address && (
+              <div className="text-xs text-gray-400 mt-0.5">{clickedPlace.address}</div>
+            )}
+          </div>
+          <Button
+            type="button"
+            onClick={() => {
+              onSelectPlace(clickedPlace);
+              setSearchResults([]);
+              setSelectedPlace(null);
+              setClickedPlace(null);
+              setSearchQuery('');
+              clearMarkers();
+              if (clickMarkerRef.current) {
+                clickMarkerRef.current.setMap(null);
+                clickMarkerRef.current = null;
+              }
+            }}
+            className="w-full"
+          >
+            이 위치 선택
+          </Button>
+        </div>
       )}
     </div>
   );
