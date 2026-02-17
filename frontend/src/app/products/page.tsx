@@ -188,10 +188,6 @@ export default function ProductsPage() {
       alert('계좌가 설정되지 않은 상품입니다.');
       return;
     }
-    if (!product.default_price) {
-      alert('가격이 설정되지 않은 상품입니다.');
-      return;
-    }
 
     // 카테고리 ID 찾기
     const category = categories.find(cat =>
@@ -208,7 +204,7 @@ export default function ProductsPage() {
         category_id: category.id,
         subcategory_id: product.subcategory_id,
         product_id: product.id,
-        amount: Number(product.default_price),
+        amount: product.default_price ? Number(product.default_price) : 0,
         expense_at: getSeoulNow(),
       });
       router.push('/expenses');
