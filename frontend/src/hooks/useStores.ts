@@ -15,7 +15,7 @@ export function useStores() {
       setIsLoading(true);
       setError(null);
       const response = await api.get<Store[]>('/stores/');
-      setStores(response.data);
+      setStores(response.data.sort((a, b) => a.name.localeCompare(b.name, 'ko')));
     } catch (err) {
       setError('매장 목록을 불러오는데 실패했습니다.');
       console.error('Failed to fetch stores:', err);
