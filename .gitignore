@@ -1,3 +1,5 @@
 backend/.env
 *.pyc
 프롬프트
+backups/
+files/
