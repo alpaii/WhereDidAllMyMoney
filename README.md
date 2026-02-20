@@ -79,6 +79,20 @@ sed -i '' '/^\\restrict/d' db_dump.sql
 docker exec -i money_tracker_db psql -U postgres money_tracker < db_dump.sql
 ```
 
+### 이미지 파일 동기화
+
+아이맥과 맥미니 간 업로드 이미지를 rsync로 동기화합니다.
+
+```bash
+# 아이맥 → 맥미니
+rsync -avz /Users/jmac/Documents/dev/WhereDidAllMyMoneyGo/files/uploads/ jkh@192.168.50.153:~/dev/WhereDidAllMyMoney/files/uploads/
+
+# 맥미니 → 아이맥
+rsync -avz jkh@192.168.50.153:~/dev/WhereDidAllMyMoney/files/uploads/ /Users/jmac/Documents/dev/WhereDidAllMyMoneyGo/files/uploads/
+```
+
+> 맥미니에서 **시스템 설정 → 일반 → 공유 → 원격 로그인**이 켜져 있어야 하며, **개인정보 보호 및 보안 → 전체 디스크 접근 권한**에 `sshd-keygen-wrapper`가 추가되어 있어야 합니다.
+
 ### 로컬 개발 (Docker 없이)
 
 ```bash
