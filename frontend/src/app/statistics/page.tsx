@@ -122,91 +122,89 @@ export default function StatisticsPage() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Daily expenses chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>일별 지출</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
-              ) : dailyChartData.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  데이터가 없습니다
-                </div>
-              ) : (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dailyChartData} margin={{ top: 30, right: 10, left: 10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                      <YAxis
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => `${Math.floor(value / 10000)}만`}
-                        domain={[0, dailyMax]}
+        {/* Monthly expenses chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{year}년 월별 지출</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+            ) : monthlyChartData.length === 0 ? (
+              <div className="h-64 flex items-center justify-center text-gray-500">
+                데이터가 없습니다
+              </div>
+            ) : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyChartData} margin={{ top: 30, right: 10, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <YAxis
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `${Math.floor(value / 10000)}만`}
+                      domain={[0, monthlyMax]}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [formatCurrency(value), '지출']}
+                    />
+                    <Bar dataKey="amount" fill="#10B981" radius={[4, 4, 0, 0]}>
+                      <LabelList
+                        dataKey="amount"
+                        position="top"
+                        fontSize={11}
+                        fill="#374151"
+                        formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
                       />
-                      <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), '지출']}
-                      />
-                      <Bar dataKey="amount" fill="#3B82F6" radius={[4, 4, 0, 0]}>
-                        <LabelList
-                          dataKey="amount"
-                          position="top"
-                          fontSize={11}
-                          fill="#374151"
-                          formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Monthly expenses chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{year}년 월별 지출</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
-              ) : monthlyChartData.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  데이터가 없습니다
-                </div>
-              ) : (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyChartData} margin={{ top: 30, right: 10, left: 10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => `${Math.floor(value / 10000)}만`}
-                        domain={[0, monthlyMax]}
+        {/* Daily expenses chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>일별 지출</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+            ) : dailyChartData.length === 0 ? (
+              <div className="h-64 flex items-center justify-center text-gray-500">
+                데이터가 없습니다
+              </div>
+            ) : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dailyChartData} margin={{ top: 30, right: 10, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `${Math.floor(value / 10000)}만`}
+                      domain={[0, dailyMax]}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [formatCurrency(value), '지출']}
+                    />
+                    <Bar dataKey="amount" fill="#3B82F6" radius={[4, 4, 0, 0]}>
+                      <LabelList
+                        dataKey="amount"
+                        position="top"
+                        fontSize={11}
+                        fill="#374151"
+                        formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
                       />
-                      <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), '지출']}
-                      />
-                      <Bar dataKey="amount" fill="#10B981" radius={[4, 4, 0, 0]}>
-                        <LabelList
-                          dataKey="amount"
-                          position="top"
-                          fontSize={11}
-                          fill="#374151"
-                          formatter={(value: number) => value > 0 ? formatCurrency(value) : ''}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Category details */}
         <Card>
