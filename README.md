@@ -83,11 +83,13 @@ docker exec -i money_tracker_db psql -U postgres money_tracker < db_dump.sql
 
 아이맥과 맥미니 간 업로드 이미지를 rsync로 동기화합니다.
 
+아이맥 → 맥미니:
 ```bash
-# 아이맥 → 맥미니
 rsync -avz /Users/jmac/Documents/dev/WhereDidAllMyMoneyGo/files/uploads/ jkh@192.168.50.153:~/dev/WhereDidAllMyMoney/files/uploads/
+```
 
-# 맥미니 → 아이맥
+맥미니 → 아이맥:
+```bash
 rsync -avz jkh@192.168.50.153:~/dev/WhereDidAllMyMoney/files/uploads/ /Users/jmac/Documents/dev/WhereDidAllMyMoneyGo/files/uploads/
 ```
 
