@@ -396,8 +396,8 @@ export default function ExpensesPage() {
   // Get photo URL from file path
   const getPhotoUrl = (filePath: string) => {
     // Backend serves files from /uploads
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || '';
-    return `${apiBaseUrl}/${filePath}`;
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:8000/${filePath}`;
   };
 
   // 계층형 지출 추가 모달 핸들러

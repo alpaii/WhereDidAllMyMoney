@@ -1,7 +1,17 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const isBrowser = typeof window !== 'undefined';
+
+function getApiBaseUrl() {
+  if (isBrowser) {
+    // 브라우저 접속 주소의 hostname을 사용하고 포트만 8000으로 변경
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:8000/api/v1`;
+  }
+  return process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
