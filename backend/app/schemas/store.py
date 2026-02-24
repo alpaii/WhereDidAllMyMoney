@@ -16,7 +16,8 @@ class StoreBase(BaseModel):
 
 
 class StoreCreate(StoreBase):
-    pass
+    store_category_id: Optional[UUID] = None
+    store_subcategory_id: Optional[UUID] = None
 
 
 class StoreUpdate(BaseModel):
@@ -28,15 +29,24 @@ class StoreUpdate(BaseModel):
     naver_place_id: Optional[str] = Field(None, max_length=100)
     category: Optional[str] = Field(None, max_length=200)
     phone: Optional[str] = Field(None, max_length=50)
+    store_category_id: Optional[UUID] = None
+    store_subcategory_id: Optional[UUID] = None
 
 
 class StoreResponse(StoreBase):
     id: UUID
+    store_category_id: Optional[UUID] = None
+    store_subcategory_id: Optional[UUID] = None
     sort_order: int
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class StoreMoveCategory(BaseModel):
+    store_category_id: UUID
+    store_subcategory_id: UUID
 
 
 class StoreOrderItem(BaseModel):

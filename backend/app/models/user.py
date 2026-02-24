@@ -30,6 +30,7 @@ class User(Base):
     expenses = relationship("Expense", back_populates="user", cascade="all, delete-orphan")
     products = relationship("Product", back_populates="user", cascade="all, delete-orphan")
     stores = relationship("Store", back_populates="user", cascade="all, delete-orphan")
+    store_categories = relationship("StoreCategory", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     maintenance_fees = relationship("MaintenanceFee", back_populates="user", cascade="all, delete-orphan")
 

@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from sqlalchemy import text
 
 from app.core.config import settings
 from app.api.v1.router import api_router
@@ -21,6 +22,30 @@ async def lifespan(app: FastAPI):
     # Startup: Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        # Add store_category_id, store_subcategory_id columns to stores table (if not exists)
+        await conn.execute(
+            text("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'stores' AND column_name = 'store_category_id'
+                    ) THEN
+                        ALTER TABLE stores ADD COLUMN store_category_id UUID REFERENCES store_categories(id) ON DELETE SET NULL;
+                        CREATE INDEX IF NOT EXISTS ix_stores_store_category_id ON stores(store_category_id);
+                    END IF;
+
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'stores' AND column_name = 'store_subcategory_id'
+                    ) THEN
+                        ALTER TABLE stores ADD COLUMN store_subcategory_id UUID REFERENCES store_subcategories(id) ON DELETE SET NULL;
+                        CREATE INDEX IF NOT EXISTS ix_stores_store_subcategory_id ON stores(store_subcategory_id);
+                    END IF;
+                END $$;
+            """)
+        )
 
     yield
     # Shutdown

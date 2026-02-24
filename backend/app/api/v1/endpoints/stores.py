@@ -9,7 +9,7 @@ from uuid import UUID
 from app.db.database import get_db
 from app.models.user import User
 from app.models.store import Store
-from app.schemas.store import StoreCreate, StoreUpdate, StoreResponse, StoreOrderUpdate, NaverSearchResponse, NaverPlaceItem
+from app.schemas.store import StoreCreate, StoreUpdate, StoreResponse, StoreOrderUpdate, NaverSearchResponse, NaverPlaceItem, StoreMoveCategory
 from app.core.deps import get_current_user
 from app.core.config import settings
 
@@ -23,15 +23,18 @@ def remove_html_tags(text: str) -> str:
 
 @router.get("/", response_model=List[StoreResponse])
 async def get_stores(
+    store_subcategory_id: UUID = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """매장 목록 조회"""
-    result = await db.execute(
-        select(Store)
-        .where(Store.user_id == current_user.id)
-        .order_by(Store.sort_order, Store.name)
-    )
+    """매장 목록 조회 (서브카테고리 필터 가능)"""
+    query = select(Store).where(Store.user_id == current_user.id)
+
+    if store_subcategory_id:
+        query = query.where(Store.store_subcategory_id == store_subcategory_id)
+
+    query = query.order_by(Store.name)
+    result = await db.execute(query)
     return result.scalars().all()
 
 
@@ -59,6 +62,8 @@ async def create_store(
         naver_place_id=store_data.naver_place_id,
         category=store_data.category,
         phone=store_data.phone,
+        store_category_id=store_data.store_category_id,
+        store_subcategory_id=store_data.store_subcategory_id,
         sort_order=max_order + 1
     )
     db.add(store)
@@ -169,6 +174,37 @@ async def update_store_order(
 
     await db.commit()
     return {"message": "Order updated successfully"}
+
+
+@router.patch("/{store_id}/move-category", response_model=StoreResponse)
+async def move_store_category(
+    store_id: UUID,
+    move_data: StoreMoveCategory,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """매장 카테고리 이동"""
+    result = await db.execute(
+        select(Store).where(
+            Store.id == store_id,
+            Store.user_id == current_user.id
+        )
+    )
+    store = result.scalar_one_or_none()
+
+    if not store:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Store not found"
+        )
+
+    store.store_category_id = move_data.store_category_id
+    store.store_subcategory_id = move_data.store_subcategory_id
+
+    await db.commit()
+    await db.refresh(store)
+
+    return store
 
 
 @router.get("/naver/search", response_model=NaverSearchResponse)

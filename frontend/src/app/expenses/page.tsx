@@ -51,7 +51,7 @@ export default function ExpensesPage() {
   const { accounts } = useAccounts();
   const { categories } = useCategories();
   const { products } = useProducts();
-  const { stores } = useStores();
+  const { stores } = useStores(true);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
 

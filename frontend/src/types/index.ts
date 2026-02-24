@@ -208,6 +208,23 @@ export interface AccountSummary {
   percentage: number;
 }
 
+// Store Category types
+export interface StoreCategory {
+  id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  subcategories?: StoreSubcategory[];
+}
+
+export interface StoreSubcategory {
+  id: string;
+  store_category_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
 // Store types
 export interface Store {
   id: string;
@@ -219,6 +236,8 @@ export interface Store {
   naver_place_id?: string;
   category?: string;
   phone?: string;
+  store_category_id?: string;
+  store_subcategory_id?: string;
   sort_order: number;
   created_at: string;
 }
@@ -232,6 +251,8 @@ export interface StoreCreate {
   naver_place_id?: string | null;
   category?: string | null;
   phone?: string | null;
+  store_category_id?: string | null;
+  store_subcategory_id?: string | null;
 }
 
 // 네이버 지역 검색 결과

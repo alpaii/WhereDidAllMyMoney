@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
   action?: React.ReactNode;
 }
 

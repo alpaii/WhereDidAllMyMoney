@@ -4,17 +4,21 @@ import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
 import type { Store, StoreCreate, NaverSearchResponse, NaverPlaceItem } from '@/types';
 
-export function useStores() {
+export function useStores(autoFetch = false) {
   const [stores, setStores] = useState<Store[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(autoFetch);
   const [error, setError] = useState<string | null>(null);
   const hasFetched = useRef(false);
 
-  const fetchStores = async () => {
+  const fetchStores = async (storeSubcategoryId?: string) => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await api.get<Store[]>('/stores/');
+      const params: Record<string, string> = {};
+      if (storeSubcategoryId) {
+        params.store_subcategory_id = storeSubcategoryId;
+      }
+      const response = await api.get<Store[]>('/stores/', { params });
       setStores(response.data.sort((a, b) => a.name.localeCompare(b.name, 'ko')));
     } catch (err) {
       setError('매장 목록을 불러오는데 실패했습니다.');
@@ -26,7 +30,7 @@ export function useStores() {
 
   const createStore = async (data: StoreCreate) => {
     const response = await api.post<Store>('/stores/', data);
-    setStores((prev) => [...prev, response.data]);
+    setStores((prev) => [...prev, response.data].sort((a, b) => a.name.localeCompare(b.name, 'ko')));
     return response.data;
   };
 
@@ -34,6 +38,7 @@ export function useStores() {
     const response = await api.patch<Store>(`/stores/${id}`, data);
     setStores((prev) =>
       prev.map((store) => (store.id === id ? response.data : store))
+        .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
     );
     return response.data;
   };
@@ -43,19 +48,14 @@ export function useStores() {
     setStores((prev) => prev.filter((store) => store.id !== id));
   };
 
-  const updateStoreOrder = async (orderUpdate: { id: string; sort_order: number }[]) => {
-    await api.put('/stores/order', { stores: orderUpdate });
-    // Optimistically update the order locally
-    setStores((prev) => {
-      const newStores = [...prev];
-      orderUpdate.forEach((item) => {
-        const store = newStores.find((s) => s.id === item.id);
-        if (store) {
-          store.sort_order = item.sort_order;
-        }
-      });
-      return newStores.sort((a, b) => a.sort_order - b.sort_order);
+  const moveStoreCategory = async (storeId: string, storeCategoryId: string, storeSubcategoryId: string) => {
+    const response = await api.patch<Store>(`/stores/${storeId}/move-category`, {
+      store_category_id: storeCategoryId,
+      store_subcategory_id: storeSubcategoryId,
     });
+    // Remove from current list (it moved to another subcategory)
+    setStores((prev) => prev.filter((store) => store.id !== storeId));
+    return response.data;
   };
 
   const searchNaverPlaces = async (query: string): Promise<NaverPlaceItem[]> => {
@@ -73,7 +73,6 @@ export function useStores() {
 
   // 네이버 좌표를 일반 좌표로 변환 (네이버는 KATECH 좌표계 사용)
   const convertNaverCoords = (mapx: string, mapy: string): { lat: number; lng: number } => {
-    // 네이버 지역검색 API는 좌표를 10000000으로 나눈 값을 제공
     const lng = parseInt(mapx, 10) / 10000000;
     const lat = parseInt(mapy, 10) / 10000000;
     return { lat, lng };
@@ -95,10 +94,11 @@ export function useStores() {
   };
 
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-    fetchStores();
-  }, []);
+    if (autoFetch && !hasFetched.current) {
+      hasFetched.current = true;
+      fetchStores();
+    }
+  }, [autoFetch]);
 
   return {
     stores,
@@ -108,7 +108,7 @@ export function useStores() {
     createStore,
     updateStore,
     deleteStore,
-    updateStoreOrder,
+    moveStoreCategory,
     searchNaverPlaces,
     naverPlaceToStoreCreate,
   };

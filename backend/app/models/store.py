@@ -19,6 +19,8 @@ class Store(Base):
     naver_place_id = Column(String(100), nullable=True)  # 네이버 플레이스 ID
     category = Column(String(200), nullable=True)  # 업종 카테고리
     phone = Column(String(50), nullable=True)  # 전화번호
+    store_category_id = Column(UUID(as_uuid=True), ForeignKey("store_categories.id", ondelete="SET NULL"), nullable=True, index=True)
+    store_subcategory_id = Column(UUID(as_uuid=True), ForeignKey("store_subcategories.id", ondelete="SET NULL"), nullable=True, index=True)
     sort_order = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -26,3 +28,5 @@ class Store(Base):
     # Relationships
     user = relationship("User", back_populates="stores")
     expenses = relationship("Expense", back_populates="store")
+    store_category_rel = relationship("StoreCategory", back_populates="stores")
+    store_subcategory_rel = relationship("StoreSubcategory", back_populates="stores")
