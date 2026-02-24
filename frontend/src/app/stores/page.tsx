@@ -4,26 +4,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, GripVertical, Pencil, MapPin, Tag, X } from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { Plus, Pencil, MapPin, Tag } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
-import { Card, CardContent, Button, Input, Modal } from '@/components/ui';
+import { Button, Input, Modal } from '@/components/ui';
 import { KakaoMap } from '@/components/KakaoMap';
 import { useStores } from '@/hooks/useStores';
 import type { Store, StoreCreate } from '@/types';
@@ -34,57 +17,29 @@ const storeSchema = z.object({
 
 type StoreForm = z.infer<typeof storeSchema>;
 
-function SortableStoreItem({
+function StoreItem({
   store,
   onEdit,
 }: {
   store: Store;
   onEdit: (store: Store) => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: store.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg"
-    >
-      <div className="flex items-start gap-3 flex-1">
-        <button
-          className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 touch-none mt-0.5"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical size={20} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <span className="font-medium text-gray-800 block">{store.name}</span>
-          {store.road_address && (
-            <span className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-              <MapPin size={14} className="flex-shrink-0" />
-              <span className="truncate">{store.road_address}</span>
-            </span>
-          )}
-          {store.category && (
-            <span className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-              <Tag size={12} className="flex-shrink-0" />
-              {store.category}
-            </span>
-          )}
-        </div>
+    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg">
+      <div className="flex-1 min-w-0">
+        <span className="font-medium text-gray-800 block">{store.name}</span>
+        {store.road_address && (
+          <span className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+            <MapPin size={14} className="flex-shrink-0" />
+            <span className="truncate">{store.road_address}</span>
+          </span>
+        )}
+        {store.category && (
+          <span className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+            <Tag size={12} className="flex-shrink-0" />
+            {store.category}
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-1">
         <button
@@ -106,7 +61,6 @@ export default function StoresPage() {
     createStore,
     updateStore,
     deleteStore,
-    updateStoreOrder,
   } = useStores();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -115,37 +69,9 @@ export default function StoresPage() {
   const [selectedPlace, setSelectedPlace] = useState<StoreCreate | null>(null);
   const [manualMode, setManualMode] = useState(false);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
   const form = useForm<StoreForm>({
     resolver: zodResolver(storeSchema),
   });
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = stores.findIndex((store) => store.id === active.id);
-      const newIndex = stores.findIndex((store) => store.id === over.id);
-
-      const newOrder = arrayMove(stores, oldIndex, newIndex);
-      const orderUpdate = newOrder.map((store, index) => ({
-        id: store.id,
-        sort_order: index,
-      }));
-
-      try {
-        await updateStoreOrder(orderUpdate);
-      } catch (error) {
-        console.error('Failed to update store order:', error);
-      }
-    }
-  };
 
   const handleSelectPlace = (place: StoreCreate) => {
     setSelectedPlace(place);
@@ -232,42 +158,27 @@ export default function StoresPage() {
       }
     >
       <div className="space-y-6">
-        <Card>
-          <CardContent className="pt-6">
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-16 bg-gray-100 animate-pulse rounded-lg" />
-                ))}
-              </div>
-            ) : stores.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                등록된 매장이 없습니다
-              </div>
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={stores.map((s) => s.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-3">
-                    {stores.map((store) => (
-                      <SortableStoreItem
-                        key={store.id}
-                        store={store}
-                        onEdit={openEditModal}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
-          </CardContent>
-        </Card>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-16 bg-gray-100 animate-pulse rounded-lg" />
+            ))}
+          </div>
+        ) : stores.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            등록된 매장이 없습니다
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {stores.map((store) => (
+              <StoreItem
+                key={store.id}
+                store={store}
+                onEdit={openEditModal}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Modal */}
         <Modal
