@@ -427,8 +427,11 @@ export default function StoresPage() {
 
   const openMoveModal = (store: Store) => {
     setMovingStore(store);
-    setMoveCategoryId('');
-    setMoveSubcategoryId('');
+    // Keep previous selection if available, otherwise use store's current category
+    if (!moveCategoryId) {
+      setMoveCategoryId(store.store_category_id || '');
+      setMoveSubcategoryId(store.store_subcategory_id || '');
+    }
     setIsMoveModalOpen(true);
   };
 
@@ -461,48 +464,47 @@ export default function StoresPage() {
 
   const isLoading = isCategoriesLoading;
 
-  // Header title and action based on view level
-  let headerTitle = '매장 관리';
+  // Header action based on view level
   let headerAction = (
     <Button onClick={() => { setEditingCategory(null); categoryForm.reset({ name: '' }); setIsCategoryModalOpen(true); }} size="icon" title="카테고리 추가">
       <Plus size={20} />
     </Button>
   );
-  let showBack = false;
 
   if (viewLevel === 'subcategories' && selectedCategory) {
-    headerTitle = selectedCategory.name;
     headerAction = (
       <Button onClick={() => { setEditingSubcategory(null); subcategoryForm.reset({ name: '' }); setIsSubcategoryModalOpen(true); }} size="icon" title="서브카테고리 추가">
         <Plus size={20} />
       </Button>
     );
-    showBack = true;
   } else if (viewLevel === 'stores' && selectedSubcategory) {
-    headerTitle = selectedSubcategory.name;
     headerAction = (
       <Button onClick={openCreateStoreModal} size="icon" title="매장 추가">
         <Plus size={20} />
       </Button>
     );
-    showBack = true;
   }
 
   return (
     <DashboardLayout
-      title={
-        showBack ? (
-          <div className="flex items-center gap-2">
-            <button onClick={navigateBack} className="p-1 hover:bg-gray-100 rounded-lg">
-              <ChevronLeft size={24} />
-            </button>
-            <span>{headerTitle}</span>
-          </div>
-        ) : headerTitle
-      }
+      title="매장 관리"
       action={headerAction}
     >
       <div className="space-y-6">
+        {/* Sub-navigation bar */}
+        {viewLevel === 'subcategories' && selectedCategory && (
+          <button onClick={navigateBack} className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
+            <ChevronLeft size={20} />
+            <span className="font-semibold text-lg">{selectedCategory.name}</span>
+          </button>
+        )}
+        {viewLevel === 'stores' && selectedSubcategory && (
+          <button onClick={navigateBack} className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
+            <ChevronLeft size={20} />
+            <span className="font-semibold text-lg">{selectedCategory?.name} &gt; {selectedSubcategory.name}</span>
+          </button>
+        )}
+
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
@@ -575,7 +577,7 @@ export default function StoresPage() {
           title={editingCategory ? '카테고리 수정' : '카테고리 추가'}
         >
           <form onSubmit={categoryForm.handleSubmit(handleSaveCategory)} className="space-y-4">
-            <Input id="cat-name" label="카테고리 이름" error={categoryForm.formState.errors.name?.message} {...categoryForm.register('name')} />
+            <Input id="cat-name" label="카테고리 이름" autoFocus error={categoryForm.formState.errors.name?.message} {...categoryForm.register('name')} />
             <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingCategory ? (
                 <Button type="button" variant="danger" onClick={() => { handleDeleteCategory(editingCategory.id); setIsCategoryModalOpen(false); setEditingCategory(null); }}>
@@ -597,7 +599,7 @@ export default function StoresPage() {
           title={editingSubcategory ? '서브카테고리 수정' : '서브카테고리 추가'}
         >
           <form onSubmit={subcategoryForm.handleSubmit(handleSaveSubcategory)} className="space-y-4">
-            <Input id="sub-name" label="서브카테고리 이름" error={subcategoryForm.formState.errors.name?.message} {...subcategoryForm.register('name')} />
+            <Input id="sub-name" label="서브카테고리 이름" autoFocus error={subcategoryForm.formState.errors.name?.message} {...subcategoryForm.register('name')} />
             <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
               {editingSubcategory ? (
                 <Button type="button" variant="danger" onClick={() => { handleDeleteSubcategory(editingSubcategory.id); setIsSubcategoryModalOpen(false); setEditingSubcategory(null); }}>

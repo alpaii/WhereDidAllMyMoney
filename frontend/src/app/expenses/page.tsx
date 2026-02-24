@@ -25,6 +25,7 @@ import { useExpenses } from '@/hooks/useExpenses';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories, useProducts } from '@/hooks/useCategories';
 import { useStores } from '@/hooks/useStores';
+import { useStoreCategories } from '@/hooks/useStoreCategories';
 import { formatCurrency, formatDateTime, toSeoulDateTimeLocal, getSeoulNow, formatAmountWithComma, getDateRange, formatLocalDate } from '@/lib/utils';
 import type { Expense, ExpensePhoto } from '@/types';
 
@@ -52,8 +53,18 @@ export default function ExpensesPage() {
   const { categories } = useCategories();
   const { products } = useProducts();
   const { stores } = useStores(true);
+  const { storeCategories, initialize: initStoreCategories } = useStoreCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
+
+  // 매장 카테고리 선택 상태
+  const [selectedStoreCategoryId, setSelectedStoreCategoryId] = useState<string>('');
+  const [selectedStoreSubcategoryId, setSelectedStoreSubcategoryId] = useState<string>('');
+
+  // 매장 카테고리 초기화
+  useEffect(() => {
+    initStoreCategories();
+  }, [initStoreCategories]);
 
   // 필터 상태
   const [filterDatePreset, setFilterDatePreset] = useState<string>('this_month');
@@ -247,6 +258,8 @@ export default function ExpensesPage() {
     }
 
     setSelectedSubcategoryId(defaultSubcategoryId);
+    setSelectedStoreCategoryId('');
+    setSelectedStoreSubcategoryId('');
     setModalSatisfaction(null);
     reset({
       account_id: defaultAccountId,
@@ -267,6 +280,15 @@ export default function ExpensesPage() {
     setSelectedCategoryId(expense.category_id);
     setSelectedSubcategoryId(expense.subcategory_id);
     setModalSatisfaction(expense.satisfaction ?? null);
+    // 매장 카테고리/서브카테고리 설정
+    if (expense.store_id) {
+      const store = stores.find(s => s.id === expense.store_id);
+      setSelectedStoreCategoryId(store?.store_category_id || '');
+      setSelectedStoreSubcategoryId(store?.store_subcategory_id || '');
+    } else {
+      setSelectedStoreCategoryId('');
+      setSelectedStoreSubcategoryId('');
+    }
     reset({
       account_id: expense.account_id,
       category_id: expense.category_id,
@@ -286,6 +308,8 @@ export default function ExpensesPage() {
     setEditingExpense(null);
     setSelectedCategoryId(null);
     setSelectedSubcategoryId(null);
+    setSelectedStoreCategoryId('');
+    setSelectedStoreSubcategoryId('');
     setModalSatisfaction(null);
     reset();
   };
@@ -545,6 +569,24 @@ export default function ExpensesPage() {
         ? `${product.name} (${Math.round(product.default_price).toLocaleString('ko-KR')}원)`
         : product.name,
     })),
+  ];
+
+  // 매장 카테고리 기반 매장 필터
+  const selectedStoreCategoryData = storeCategories.find(c => c.id === selectedStoreCategoryId);
+  const storeSubcategoryOptions = [
+    { value: '', label: '서브카테고리 선택' },
+    ...(selectedStoreCategoryData?.subcategories?.map(sub => ({ value: sub.id, label: sub.name })) || []),
+  ];
+  const filteredStores = selectedStoreSubcategoryId
+    ? stores.filter(s => s.store_subcategory_id === selectedStoreSubcategoryId)
+    : [];
+  const storeOptions = [
+    { value: '', label: '매장 선택' },
+    ...filteredStores.map(store => ({ value: store.id, label: store.name })),
+  ];
+  const storeCategoryOptions = [
+    { value: '', label: '카테고리 선택' },
+    ...storeCategories.map(cat => ({ value: cat.id, label: cat.name })),
   ];
 
   // 필터용 옵션
@@ -1046,14 +1088,37 @@ export default function ExpensesPage() {
               {...register('memo')}
             />
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Select
+                id="store_category_select"
+                label="매장 카테고리"
+                options={storeCategoryOptions}
+                value={selectedStoreCategoryId}
+                onChange={(e) => {
+                  setSelectedStoreCategoryId(e.target.value);
+                  setSelectedStoreSubcategoryId('');
+                  setValue('store_id', '');
+                }}
+              />
+              <Select
+                id="store_subcategory_select"
+                label="매장 서브카테고리"
+                options={storeSubcategoryOptions}
+                value={selectedStoreSubcategoryId}
+                disabled={!selectedStoreCategoryId}
+                onChange={(e) => {
+                  setSelectedStoreSubcategoryId(e.target.value);
+                  setValue('store_id', '');
+                }}
+              />
+            </div>
+
             <Select
               id="store_id"
-              label="매장 (선택)"
-              options={[
-                { value: '', label: '매장 선택' },
-                ...stores.map((store) => ({ value: store.id, label: store.name })),
-              ]}
+              label="매장"
+              options={storeOptions}
               error={errors.store_id?.message}
+              disabled={!selectedStoreSubcategoryId}
               {...register('store_id')}
             />
 
