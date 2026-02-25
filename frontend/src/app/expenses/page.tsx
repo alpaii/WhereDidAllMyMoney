@@ -74,6 +74,8 @@ export default function ExpensesPage() {
   const [filterSubcategoryId, setFilterSubcategoryId] = useState<string>('');
   const [filterProductId, setFilterProductId] = useState<string>('');
   const [filterAccountId, setFilterAccountId] = useState<string>('');
+  const [filterStoreCategoryId, setFilterStoreCategoryId] = useState<string>('');
+  const [filterStoreSubcategoryId, setFilterStoreSubcategoryId] = useState<string>('');
   const [filterStoreId, setFilterStoreId] = useState<string>('');
 
   // 클라이언트에서 초기 날짜 설정 (SSR 시간대 문제 방지)
@@ -605,6 +607,24 @@ export default function ExpensesPage() {
     ...filterProductsForSubcategory.map((product) => ({ value: product.id, label: product.name })),
   ];
 
+  // 필터용 매장 카테고리 옵션
+  const filterStoreCategoryData = storeCategories.find(c => c.id === filterStoreCategoryId);
+  const filterStoreSubcategoryOptions = [
+    { value: '', label: '전체 서브카테고리' },
+    ...(filterStoreCategoryData?.subcategories?.map(sub => ({ value: sub.id, label: sub.name })) || []),
+  ];
+  const filterStoreList = filterStoreSubcategoryId
+    ? stores.filter(s => s.store_subcategory_id === filterStoreSubcategoryId)
+    : [];
+  const filterStoreOptions = [
+    { value: '', label: '전체 매장' },
+    ...filterStoreList.map(store => ({ value: store.id, label: store.name })),
+  ];
+  const filterStoreCategoryOptions = [
+    { value: '', label: '전체 카테고리' },
+    ...storeCategories.map(cat => ({ value: cat.id, label: cat.name })),
+  ];
+
   const handleFilterCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilterCategoryId(e.target.value);
     setFilterSubcategoryId('');
@@ -648,8 +668,18 @@ export default function ExpensesPage() {
         {/* Filter */}
         <Card>
           <CardContent className="py-3 space-y-3">
-            {/* 날짜 필터 */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* 계좌/날짜 필터 */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <Select
+                id="filter-account"
+                label="계좌"
+                options={[
+                  { value: '', label: '전체 계좌' },
+                  ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
+                ]}
+                value={filterAccountId}
+                onChange={(e) => setFilterAccountId(e.target.value)}
+              />
               <Select
                 id="filter-date-preset"
                 label="기간"
@@ -709,26 +739,36 @@ export default function ExpensesPage() {
                 disabled={!filterSubcategoryId}
               />
             </div>
-            {/* 계좌/매장 필터 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* 매장 필터 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Select
-                id="filter-account"
-                label="계좌"
-                options={[
-                  { value: '', label: '전체 계좌' },
-                  ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
-                ]}
-                value={filterAccountId}
-                onChange={(e) => setFilterAccountId(e.target.value)}
+                id="filter-store-category"
+                label="매장 카테고리"
+                options={filterStoreCategoryOptions}
+                value={filterStoreCategoryId}
+                onChange={(e) => {
+                  setFilterStoreCategoryId(e.target.value);
+                  setFilterStoreSubcategoryId('');
+                  setFilterStoreId('');
+                }}
+              />
+              <Select
+                id="filter-store-subcategory"
+                label="매장 서브카테고리"
+                options={filterStoreSubcategoryOptions}
+                value={filterStoreSubcategoryId}
+                disabled={!filterStoreCategoryId}
+                onChange={(e) => {
+                  setFilterStoreSubcategoryId(e.target.value);
+                  setFilterStoreId('');
+                }}
               />
               <Select
                 id="filter-store"
                 label="매장"
-                options={[
-                  { value: '', label: '전체 매장' },
-                  ...stores.map((store) => ({ value: store.id, label: store.name })),
-                ]}
+                options={filterStoreOptions}
                 value={filterStoreId}
+                disabled={!filterStoreSubcategoryId}
                 onChange={(e) => setFilterStoreId(e.target.value)}
               />
             </div>
@@ -1025,8 +1065,60 @@ export default function ExpensesPage() {
           onClose={handleClose}
           title={editingExpense ? '지출 수정' : '지출 추가'}
           size="lg"
+          footer={
+            <div className="flex justify-between items-center">
+              {editingExpense ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingExpense.id);
+                    handleClose();
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setModalSatisfaction(modalSatisfaction === true ? null : true)}
+                    className={`p-2 rounded-lg border ${
+                      modalSatisfaction === true
+                        ? 'bg-green-50 border-green-500 text-green-700'
+                        : 'border-gray-300 text-gray-400 hover:border-green-400 hover:text-green-600'
+                    }`}
+                    title="만족"
+                  >
+                    <ThumbsUp size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalSatisfaction(modalSatisfaction === false ? null : false)}
+                    className={`p-2 rounded-lg border ${
+                      modalSatisfaction === false
+                        ? 'bg-red-50 border-red-500 text-red-700'
+                        : 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-600'
+                    }`}
+                    title="불만족"
+                  >
+                    <ThumbsDown size={20} />
+                  </button>
+                </div>
+                <Button type="button" variant="secondary" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button type="submit" form="expense-form" isLoading={isSubmitting}>
+                  {editingExpense ? '수정' : '추가'}
+                </Button>
+              </div>
+            </div>
+          }
         >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form id="expense-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               id="expense_at"
               type="datetime-local"
@@ -1181,56 +1273,6 @@ export default function ExpensesPage() {
               </div>
             )}
 
-            <div className="flex justify-between items-center -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
-              {editingExpense ? (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => {
-                    handleDelete(editingExpense.id);
-                    handleClose();
-                  }}
-                >
-                  삭제
-                </Button>
-              ) : (
-                <div />
-              )}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setModalSatisfaction(modalSatisfaction === true ? null : true)}
-                    className={`p-2 rounded-lg border ${
-                      modalSatisfaction === true
-                        ? 'bg-green-50 border-green-500 text-green-700'
-                        : 'border-gray-300 text-gray-400 hover:border-green-400 hover:text-green-600'
-                    }`}
-                    title="만족"
-                  >
-                    <ThumbsUp size={20} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setModalSatisfaction(modalSatisfaction === false ? null : false)}
-                    className={`p-2 rounded-lg border ${
-                      modalSatisfaction === false
-                        ? 'bg-red-50 border-red-500 text-red-700'
-                        : 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-600'
-                    }`}
-                    title="불만족"
-                  >
-                    <ThumbsDown size={20} />
-                  </button>
-                </div>
-                <Button type="button" variant="secondary" onClick={handleClose}>
-                  취소
-                </Button>
-                <Button type="submit" isLoading={isSubmitting}>
-                  {editingExpense ? '수정' : '추가'}
-                </Button>
-              </div>
-            </div>
           </form>
         </Modal>
 
