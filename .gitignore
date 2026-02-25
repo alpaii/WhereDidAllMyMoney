@@ -3,3 +3,4 @@ backend/.env
 프롬프트
 backups/
 files/
+.DS_Store
