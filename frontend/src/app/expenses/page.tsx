@@ -1159,6 +1159,7 @@ export default function ExpensesPage() {
               <Input
                 id="amount"
                 type="text"
+                inputMode="numeric"
                 label="금액"
                 error={errors.amount?.message}
                 {...register('amount', { onChange: handleAmountChange })}
