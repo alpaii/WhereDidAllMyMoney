@@ -30,7 +30,6 @@ class ExpenseBase(BaseModel):
 # Create
 class ExpenseCreate(ExpenseBase):
     account_id: UUID
-    category_id: UUID
     subcategory_id: UUID
     product_id: UUID
     store_id: Optional[UUID] = None
@@ -39,7 +38,6 @@ class ExpenseCreate(ExpenseBase):
 # Update
 class ExpenseUpdate(BaseModel):
     account_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
     subcategory_id: Optional[UUID] = None
     product_id: Optional[UUID] = None
     store_id: Optional[UUID] = None
@@ -55,7 +53,7 @@ class ExpenseResponse(ExpenseBase):
     id: UUID
     user_id: UUID
     account_id: UUID
-    category_id: UUID
+    category_id: Optional[UUID] = None
     subcategory_id: UUID
     product_id: Optional[UUID]
     store_id: Optional[UUID]

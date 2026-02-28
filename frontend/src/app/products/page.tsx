@@ -189,19 +189,9 @@ export default function ProductsPage() {
       return;
     }
 
-    // 카테고리 ID 찾기
-    const category = categories.find(cat =>
-      cat.subcategories?.some(sub => sub.id === product.subcategory_id)
-    );
-    if (!category) {
-      alert('카테고리 정보를 찾을 수 없습니다.');
-      return;
-    }
-
     try {
       await createExpense({
         account_id: product.default_account_id,
-        category_id: category.id,
         subcategory_id: product.subcategory_id,
         product_id: product.id,
         amount: product.default_price ? Number(product.default_price) : 0,

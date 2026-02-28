@@ -31,7 +31,7 @@ import type { Expense, ExpensePhoto } from '@/types';
 
 const expenseSchema = z.object({
   account_id: z.string().min(1, '계좌를 선택하세요'),
-  category_id: z.string().min(1, '카테고리를 선택하세요'),
+  category_id: z.string().optional(),
   subcategory_id: z.string().min(1, '서브카테고리를 선택하세요'),
   product_id: z.string().min(1, '상품을 선택하세요'),
   amount: z.string(),
@@ -279,7 +279,12 @@ export default function ExpensesPage() {
 
   const openEditModal = (expense: Expense) => {
     setEditingExpense(expense);
-    setSelectedCategoryId(expense.category_id);
+    // subcategory_id에서 카테고리 역추적
+    const parentCategory = categories.find(c =>
+      c.subcategories?.some(sub => sub.id === expense.subcategory_id)
+    );
+    const derivedCategoryId = parentCategory?.id || expense.category_id || '';
+    setSelectedCategoryId(derivedCategoryId);
     setSelectedSubcategoryId(expense.subcategory_id);
     setModalSatisfaction(expense.satisfaction ?? null);
     // 매장 카테고리/서브카테고리 설정
@@ -293,7 +298,7 @@ export default function ExpensesPage() {
     }
     reset({
       account_id: expense.account_id,
-      category_id: expense.category_id,
+      category_id: derivedCategoryId,
       subcategory_id: expense.subcategory_id,
       product_id: expense.product_id || '',
       amount: Math.round(Number(expense.amount)).toLocaleString('ko-KR'),
@@ -321,7 +326,6 @@ export default function ExpensesPage() {
       setIsSubmitting(true);
       const expenseData = {
         account_id: data.account_id,
-        category_id: data.category_id,
         subcategory_id: data.subcategory_id,
         product_id: data.product_id,
         store_id: data.store_id || null,
@@ -340,8 +344,10 @@ export default function ExpensesPage() {
       // localStorage에 마지막 선택값 저장
       setLastSelectedAccountId(data.account_id);
       localStorage.setItem('lastSelectedAccountId', data.account_id);
-      setLastSelectedCategoryId(data.category_id);
-      localStorage.setItem('lastSelectedCategoryId', data.category_id);
+      if (data.category_id) {
+        setLastSelectedCategoryId(data.category_id);
+        localStorage.setItem('lastSelectedCategoryId', data.category_id);
+      }
       setLastSelectedSubcategoryId(data.subcategory_id);
       localStorage.setItem('lastSelectedSubcategoryId', data.subcategory_id);
       handleClose();
@@ -371,7 +377,6 @@ export default function ExpensesPage() {
     try {
       await createExpense({
         account_id: expense.account_id,
-        category_id: expense.category_id,
         subcategory_id: expense.subcategory_id,
         product_id: expense.product_id,
         store_id: expense.store_id || null,
@@ -470,20 +475,10 @@ export default function ExpensesPage() {
       return;
     }
 
-    // 카테고리 ID 찾기
-    const category = categories.find(cat =>
-      cat.subcategories?.some(sub => sub.id === product.subcategory_id)
-    );
-    if (!category) {
-      alert('카테고리 정보를 찾을 수 없습니다.');
-      return;
-    }
-
     try {
       setIsQuickAdding(true);
       await createExpense({
         account_id: product.default_account_id,
-        category_id: category.id,
         subcategory_id: product.subcategory_id,
         product_id: product.id,
         amount: product.default_price ? Number(product.default_price) : 0,

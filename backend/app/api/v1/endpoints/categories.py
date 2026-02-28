@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update as sa_update
 from sqlalchemy.orm import selectinload
 from typing import List
 from uuid import UUID
@@ -154,6 +154,18 @@ async def delete_category(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="상품이 등록된 카테고리는 삭제할 수 없습니다"
+        )
+
+    # Check if any subcategory has expenses
+    expense_count = await db.scalar(
+        select(func.count()).select_from(Expense)
+        .join(Subcategory, Expense.subcategory_id == Subcategory.id)
+        .where(Subcategory.category_id == category_id)
+    )
+    if expense_count and expense_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"이 카테고리의 서브카테고리를 사용하는 지출내역이 {expense_count}건 있어 삭제할 수 없습니다."
         )
 
     await db.delete(category)
@@ -310,6 +322,18 @@ async def delete_subcategory(
             detail="Subcategory not found"
         )
 
+    # Check for referencing expenses
+    expense_count = await db.scalar(
+        select(func.count()).select_from(Expense).where(
+            Expense.subcategory_id == subcategory_id
+        )
+    )
+    if expense_count and expense_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"이 서브카테고리를 사용하는 지출내역이 {expense_count}건 있어 삭제할 수 없습니다."
+        )
+
     await db.delete(subcategory)
     await db.commit()
 
@@ -422,6 +446,14 @@ async def update_product(
     update_data = product_data.model_dump(exclude_unset=True)
     if "default_price" in update_data and update_data["default_price"] is not None:
         update_data["default_price"] = str(update_data["default_price"])
+
+    # Sync expenses when product's subcategory changes
+    if "subcategory_id" in update_data and update_data["subcategory_id"] != product.subcategory_id:
+        await db.execute(
+            sa_update(Expense)
+            .where(Expense.product_id == product_id)
+            .values(subcategory_id=update_data["subcategory_id"])
+        )
 
     for field, value in update_data.items():
         setattr(product, field, value)

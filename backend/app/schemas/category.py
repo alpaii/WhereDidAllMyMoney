@@ -88,6 +88,7 @@ class ProductCreate(ProductBase):
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
+    subcategory_id: Optional[UUID] = None
     default_price: Optional[Decimal] = None
     default_account_id: Optional[UUID] = None
     memo: Optional[str] = Field(None, max_length=1000)

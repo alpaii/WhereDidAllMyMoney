@@ -137,7 +137,7 @@ export interface Expense {
   id: string;
   user_id: string;
   account_id: string;
-  category_id: string;
+  category_id?: string;
   subcategory_id: string;
   product_id?: string;
   store_id?: string;
@@ -164,7 +164,6 @@ export interface Expense {
 
 export interface ExpenseCreate {
   account_id: string;
-  category_id: string;
   subcategory_id: string;
   product_id: string;
   store_id?: string | null;

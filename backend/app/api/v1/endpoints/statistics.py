@@ -10,7 +10,7 @@ from uuid import UUID
 
 from app.db.database import get_db
 from app.models.user import User
-from app.models.category import Category
+from app.models.category import Category, Subcategory
 from app.models.account import Account
 from app.models.expense import Expense
 from app.schemas.expense import (
@@ -89,7 +89,8 @@ async def get_expense_summary(
             func.coalesce(func.sum(Expense.amount), 0).label("total"),
             func.count(Expense.id).label("count")
         )
-        .join(Expense, Expense.category_id == Category.id)
+        .join(Subcategory, Subcategory.category_id == Category.id)
+        .join(Expense, Expense.subcategory_id == Subcategory.id)
         .where(*conditions)
         .group_by(Category.id, Category.name)
         .order_by(func.sum(Expense.amount).desc())
@@ -158,7 +159,8 @@ async def get_expenses_by_category(
             func.coalesce(func.sum(Expense.amount), 0).label("total"),
             func.count(Expense.id).label("count")
         )
-        .join(Expense, Expense.category_id == Category.id)
+        .join(Subcategory, Subcategory.category_id == Category.id)
+        .join(Expense, Expense.subcategory_id == Subcategory.id)
         .where(*conditions)
         .group_by(Category.id, Category.name)
         .order_by(func.sum(Expense.amount).desc())
@@ -301,7 +303,8 @@ async def get_category_summary(
             func.coalesce(func.sum(Expense.amount), 0).label("total"),
             func.count(Expense.id).label("count")
         )
-        .join(Expense, Expense.category_id == Category.id)
+        .join(Subcategory, Subcategory.category_id == Category.id)
+        .join(Expense, Expense.subcategory_id == Subcategory.id)
         .where(*conditions)
         .group_by(Category.id, Category.name, Category.icon)
         .order_by(func.sum(Expense.amount).desc())

@@ -20,7 +20,6 @@ class Category(Base):
     # Relationships
     user = relationship("User", back_populates="categories")
     subcategories = relationship("Subcategory", back_populates="category", cascade="all, delete-orphan", order_by="Subcategory.sort_order")
-    expenses = relationship("Expense", back_populates="category")
 
 
 class Subcategory(Base):

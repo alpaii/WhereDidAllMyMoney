@@ -47,6 +47,21 @@ async def lifespan(app: FastAPI):
             """)
         )
 
+        # Drop category_id column from expenses (now derived via subcategory)
+        await conn.execute(
+            text("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'expenses' AND column_name = 'category_id'
+                    ) THEN
+                        ALTER TABLE expenses DROP COLUMN category_id;
+                    END IF;
+                END $$;
+            """)
+        )
+
     yield
     # Shutdown
     await engine.dispose()

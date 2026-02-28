@@ -13,7 +13,6 @@ class Expense(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, index=True)
-    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=False, index=True)
     subcategory_id = Column(UUID(as_uuid=True), ForeignKey("subcategories.id", ondelete="SET NULL"), nullable=False, index=True)
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"), nullable=True, index=True)
     store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id", ondelete="SET NULL"), nullable=True, index=True)
@@ -29,7 +28,6 @@ class Expense(Base):
     # Relationships
     user = relationship("User", back_populates="expenses")
     account = relationship("Account", back_populates="expenses")
-    category = relationship("Category", back_populates="expenses")
     subcategory = relationship("Subcategory", back_populates="expenses")
     product = relationship("Product", back_populates="expenses")
     store = relationship("Store", back_populates="expenses")

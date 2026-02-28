@@ -51,7 +51,8 @@ async def get_expenses(
     if account_id:
         conditions.append(Expense.account_id == account_id)
     if category_id:
-        conditions.append(Expense.category_id == category_id)
+        subq = select(Subcategory.id).where(Subcategory.category_id == category_id)
+        conditions.append(Expense.subcategory_id.in_(subq))
     if store_id:
         conditions.append(Expense.store_id == store_id)
     if start_date:
@@ -71,8 +72,7 @@ async def get_expenses(
         .where(*conditions)
         .options(
             selectinload(Expense.account),
-            selectinload(Expense.category),
-            selectinload(Expense.subcategory),
+            selectinload(Expense.subcategory).selectinload(Subcategory.category),
             selectinload(Expense.product),
             selectinload(Expense.store),
             selectinload(Expense.photos)
@@ -93,7 +93,7 @@ async def get_expenses(
             id=exp.id,
             user_id=exp.user_id,
             account_id=exp.account_id,
-            category_id=exp.category_id,
+            category_id=exp.subcategory.category_id if exp.subcategory else None,
             subcategory_id=exp.subcategory_id,
             product_id=exp.product_id,
             store_id=exp.store_id,
@@ -105,7 +105,7 @@ async def get_expenses(
             created_at=exp.created_at,
             updated_at=exp.updated_at,
             account_name=exp.account.name if exp.account else None,
-            category_name=exp.category.name if exp.category else None,
+            category_name=exp.subcategory.category.name if exp.subcategory and exp.subcategory.category else None,
             subcategory_name=exp.subcategory.name if exp.subcategory else None,
             product_name=exp.product.name if exp.product else None,
             store_name=exp.store.name if exp.store else None,
@@ -142,16 +142,6 @@ async def create_expense(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Account not found"
-        )
-
-    # Verify category exists
-    result = await db.execute(
-        select(Category).where(Category.id == expense_data.category_id)
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Category not found"
         )
 
     # Verify subcategory exists
@@ -196,7 +186,6 @@ async def create_expense(
     expense = Expense(
         user_id=current_user.id,
         account_id=expense_data.account_id,
-        category_id=expense_data.category_id,
         subcategory_id=expense_data.subcategory_id,
         product_id=expense_data.product_id,
         store_id=expense_data.store_id,
@@ -231,8 +220,7 @@ async def get_expense(
         )
         .options(
             selectinload(Expense.account),
-            selectinload(Expense.category),
-            selectinload(Expense.subcategory),
+            selectinload(Expense.subcategory).selectinload(Subcategory.category),
             selectinload(Expense.product),
             selectinload(Expense.store),
             selectinload(Expense.photos)
@@ -250,7 +238,7 @@ async def get_expense(
         id=expense.id,
         user_id=expense.user_id,
         account_id=expense.account_id,
-        category_id=expense.category_id,
+        category_id=expense.subcategory.category_id if expense.subcategory else None,
         subcategory_id=expense.subcategory_id,
         product_id=expense.product_id,
         store_id=expense.store_id,
@@ -262,7 +250,7 @@ async def get_expense(
         created_at=expense.created_at,
         updated_at=expense.updated_at,
         account_name=expense.account.name if expense.account else None,
-        category_name=expense.category.name if expense.category else None,
+        category_name=expense.subcategory.category.name if expense.subcategory and expense.subcategory.category else None,
         subcategory_name=expense.subcategory.name if expense.subcategory else None,
         product_name=expense.product.name if expense.product else None,
         store_name=expense.store.name if expense.store else None,
