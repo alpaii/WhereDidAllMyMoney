@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Camera, X, LayoutGrid } from 'lucide-react';
+import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Camera, X, LayoutGrid, Download } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -47,7 +47,7 @@ const PAGE_SIZE = 100;
 
 export default function ExpensesPage() {
   const [page, setPage] = useState(1);
-  const { expenses, total, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense, uploadPhoto, deletePhoto } =
+  const { expenses, total, totalAmount, pages, isLoading, fetchExpenses, createExpense, updateExpense, deleteExpense, uploadPhoto, deletePhoto, downloadExcel } =
     useExpenses({ page, size: PAGE_SIZE });
   const { accounts } = useAccounts();
   const { categories } = useCategories();
@@ -125,6 +125,7 @@ export default function ExpensesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalSatisfaction, setModalSatisfaction] = useState<boolean | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 계층형 지출 추가 모달 상태
@@ -774,11 +775,44 @@ export default function ExpensesPage() {
         <Card>
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-gray-600">
-                합계 ({filteredExpenses.length}건) / 전체 {total}건
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-gray-600">
+                  합계 {total}건
+                </span>
+                <button
+                  onClick={async () => {
+                    try {
+                      setIsDownloading(true);
+                      await downloadExcel({
+                        startDate: filterStartDate || undefined,
+                        endDate: filterEndDate || undefined,
+                        categoryId: filterCategoryId || undefined,
+                        accountId: filterAccountId || undefined,
+                        storeId: filterStoreId || undefined,
+                      });
+                    } catch (error) {
+                      console.error('Failed to download:', error);
+                      alert('다운로드에 실패했습니다.');
+                    } finally {
+                      setIsDownloading(false);
+                    }
+                  }}
+                  disabled={isDownloading || total === 0}
+                  className="p-1 text-gray-400 hover:text-primary-600 disabled:opacity-50"
+                  title="엑셀 다운로드"
+                >
+                  {isDownloading ? (
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <Download size={16} />
+                  )}
+                </button>
+              </div>
               <span className="text-lg font-bold font-mono">
-                {formatCurrency(filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0))}
+                {formatCurrency(totalAmount)}
               </span>
             </div>
           </CardContent>

@@ -15,6 +15,7 @@ interface UseExpensesOptions {
 interface PaginatedExpenseResponse {
   items: Expense[];
   total: number;
+  total_amount: number;
   page: number;
   size: number;
   pages: number;
@@ -23,6 +24,7 @@ interface PaginatedExpenseResponse {
 export function useExpenses(options: UseExpensesOptions = {}) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
   const [pages, setPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +55,7 @@ export function useExpenses(options: UseExpensesOptions = {}) {
       const data = response.data;
       setExpenses(data.items || []);
       setTotal(data.total || 0);
+      setTotalAmount(data.total_amount || 0);
       setPages(data.pages || 1);
       setCurrentPage(data.page || 1);
     } catch (err: unknown) {
@@ -60,6 +63,7 @@ export function useExpenses(options: UseExpensesOptions = {}) {
       setError(error.response?.data?.detail || '지출 목록을 불러오는데 실패했습니다');
       setExpenses([]);
       setTotal(0);
+      setTotalAmount(0);
       setPages(0);
     } finally {
       setIsLoading(false);
@@ -124,9 +128,30 @@ export function useExpenses(options: UseExpensesOptions = {}) {
     );
   };
 
+  const downloadExcel = async (opts?: Omit<UseExpensesOptions, 'page' | 'size'>) => {
+    const params = new URLSearchParams();
+    if (opts?.startDate) params.append('start_date', opts.startDate);
+    if (opts?.endDate) params.append('end_date', opts.endDate);
+    if (opts?.categoryId) params.append('category_id', opts.categoryId);
+    if (opts?.accountId) params.append('account_id', opts.accountId);
+    if (opts?.storeId) params.append('store_id', opts.storeId);
+
+    const response = await api.get(`/expenses/export?${params.toString()}`, {
+      responseType: 'blob',
+    });
+
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `지출내역_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return {
     expenses,
     total,
+    totalAmount,
     pages,
     currentPage,
     isLoading,
@@ -137,5 +162,6 @@ export function useExpenses(options: UseExpensesOptions = {}) {
     deleteExpense,
     uploadPhoto,
     deletePhoto,
+    downloadExcel,
   };
 }

@@ -77,6 +77,7 @@ class ExpenseWithDetails(ExpenseResponse):
 class PaginatedExpenseResponse(BaseModel):
     items: list[ExpenseWithDetails]
     total: int
+    total_amount: Decimal
     page: int
     size: int
     pages: int

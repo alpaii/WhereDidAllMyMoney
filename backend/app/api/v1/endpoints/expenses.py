@@ -1,7 +1,9 @@
+import io
 import os
 import uuid as uuid_lib
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
@@ -10,6 +12,8 @@ from uuid import UUID
 from datetime import datetime, date
 from decimal import Decimal
 from PIL import Image
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, numbers
 
 from app.db.database import get_db
 from app.models.user import User
@@ -60,10 +64,15 @@ async def get_expenses(
     if end_date:
         conditions.append(Expense.expense_at <= datetime.combine(end_date, datetime.max.time()))
 
-    # Count total
-    count_query = select(func.count(Expense.id)).where(*conditions)
+    # Count total and sum amount
+    count_query = select(
+        func.count(Expense.id),
+        func.coalesce(func.sum(Expense.amount), 0)
+    ).where(*conditions)
     total_result = await db.execute(count_query)
-    total = total_result.scalar_one()
+    total_row = total_result.one()
+    total = total_row[0]
+    total_amount = total_row[1]
 
     # Get paginated data
     offset = (page - 1) * size
@@ -117,9 +126,109 @@ async def get_expenses(
     return PaginatedExpenseResponse(
         items=items,
         total=total,
+        total_amount=total_amount,
         page=page,
         size=size,
         pages=pages
+    )
+
+
+@router.get("/export")
+async def export_expenses(
+    account_id: Optional[UUID] = None,
+    category_id: Optional[UUID] = None,
+    store_id: Optional[UUID] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """지출 내역 엑셀 다운로드"""
+    conditions = [Expense.user_id == current_user.id]
+
+    if account_id:
+        conditions.append(Expense.account_id == account_id)
+    if category_id:
+        subq = select(Subcategory.id).where(Subcategory.category_id == category_id)
+        conditions.append(Expense.subcategory_id.in_(subq))
+    if store_id:
+        conditions.append(Expense.store_id == store_id)
+    if start_date:
+        conditions.append(Expense.expense_at >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        conditions.append(Expense.expense_at <= datetime.combine(end_date, datetime.max.time()))
+
+    query = (
+        select(Expense)
+        .where(*conditions)
+        .options(
+            selectinload(Expense.account),
+            selectinload(Expense.subcategory).selectinload(Subcategory.category),
+            selectinload(Expense.product),
+            selectinload(Expense.store),
+        )
+        .order_by(Expense.expense_at.desc())
+    )
+    result = await db.execute(query)
+    expenses = result.scalars().all()
+
+    # Build Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "지출내역"
+
+    headers = ["날짜", "계좌", "카테고리", "서브카테고리", "상품", "매장", "금액", "만족도", "메모"]
+    ws.append(headers)
+
+    # Header style
+    header_font = Font(bold=True)
+    for cell in ws[1]:
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for exp in expenses:
+        satisfaction = ""
+        if exp.satisfaction is True:
+            satisfaction = "만족"
+        elif exp.satisfaction is False:
+            satisfaction = "불만족"
+
+        ws.append([
+            exp.expense_at.strftime("%Y-%m-%d %H:%M") if exp.expense_at else "",
+            exp.account.name if exp.account else "",
+            exp.subcategory.category.name if exp.subcategory and exp.subcategory.category else "",
+            exp.subcategory.name if exp.subcategory else "",
+            exp.product.name if exp.product else "",
+            exp.store.name if exp.store else "",
+            float(exp.amount),
+            satisfaction,
+            exp.memo or "",
+        ])
+
+    # Format amount column as number with comma separator
+    for row in ws.iter_rows(min_row=2, min_col=7, max_col=7):
+        for cell in row:
+            cell.number_format = '#,##0'
+
+    # Auto-adjust column widths
+    for col in ws.columns:
+        max_length = 0
+        col_letter = col[0].column_letter
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = min(max_length + 4, 40)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"expenses_{date.today().isoformat()}.xlsx"
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
 
