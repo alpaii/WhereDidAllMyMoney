@@ -94,6 +94,7 @@ export default function ExpensesPage() {
       setFilterStartDate(range.start);
       setFilterEndDate(range.end);
     }
+    setPage(1);
   };
 
   // 필터용 서브카테고리
@@ -105,16 +106,8 @@ export default function ExpensesPage() {
     ? products.filter(p => p.subcategory_id === filterSubcategoryId)
     : [];
 
-  // 클라이언트 측 필터링 (서브카테고리, 상품)
-  const filteredExpenses = expenses.filter(expense => {
-    if (filterSubcategoryId && expense.subcategory_id !== filterSubcategoryId) {
-      return false;
-    }
-    if (filterProductId && expense.product_id !== filterProductId) {
-      return false;
-    }
-    return true;
-  });
+  // 서버 측 필터링으로 전환 - filteredExpenses는 expenses를 그대로 사용
+  const filteredExpenses = expenses;
 
   // categories에서 직접 서브카테고리 가져오기 (API 호출 없이 동기적으로)
   const selectedCategoryData = categories.find(c => c.id === selectedCategoryId);
@@ -352,7 +345,7 @@ export default function ExpensesPage() {
       setLastSelectedSubcategoryId(data.subcategory_id);
       localStorage.setItem('lastSelectedSubcategoryId', data.subcategory_id);
       handleClose();
-      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, subcategoryId: filterSubcategoryId || undefined, productId: filterProductId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to save expense:', error);
     } finally {
@@ -386,7 +379,7 @@ export default function ExpensesPage() {
         purchase_url: expense.purchase_url || null,
         expense_at: getSeoulNow(),
       });
-      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, subcategoryId: filterSubcategoryId || undefined, productId: filterProductId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to copy expense:', error);
     }
@@ -400,7 +393,7 @@ export default function ExpensesPage() {
       setIsUploadingPhoto(true);
       await uploadPhoto(editingExpense.id, file);
       // Refresh expenses to get updated photos
-      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, subcategoryId: filterSubcategoryId || undefined, productId: filterProductId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to upload photo:', error);
       alert('사진 업로드에 실패했습니다.');
@@ -418,7 +411,7 @@ export default function ExpensesPage() {
 
     try {
       await deletePhoto(editingExpense.id, photoId);
-      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, subcategoryId: filterSubcategoryId || undefined, productId: filterProductId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to delete photo:', error);
       alert('사진 삭제에 실패했습니다.');
@@ -486,7 +479,7 @@ export default function ExpensesPage() {
         expense_at: getSeoulNow(),
       });
       closeQuickAddModal();
-      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
+      fetchExpenses({ page, size: PAGE_SIZE, startDate: filterStartDate, endDate: filterEndDate, categoryId: filterCategoryId || undefined, subcategoryId: filterSubcategoryId || undefined, productId: filterProductId || undefined, accountId: filterAccountId || undefined, storeId: filterStoreId || undefined });
     } catch (error) {
       console.error('Failed to add expense:', error);
       alert('지출 추가에 실패했습니다.');
@@ -625,11 +618,13 @@ export default function ExpensesPage() {
     setFilterCategoryId(e.target.value);
     setFilterSubcategoryId('');
     setFilterProductId('');
+    setPage(1);
   };
 
   const handleFilterSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilterSubcategoryId(e.target.value);
     setFilterProductId('');
+    setPage(1);
   };
 
   // 필터 변경 시 데이터 다시 불러오기 (날짜가 설정된 후에만)
@@ -641,10 +636,12 @@ export default function ExpensesPage() {
       startDate: filterStartDate,
       endDate: filterEndDate,
       categoryId: filterCategoryId || undefined,
+      subcategoryId: filterSubcategoryId || undefined,
+      productId: filterProductId || undefined,
       accountId: filterAccountId || undefined,
       storeId: filterStoreId || undefined,
     });
-  }, [page, filterStartDate, filterEndDate, filterCategoryId, filterAccountId, filterStoreId, fetchExpenses]);
+  }, [page, filterStartDate, filterEndDate, filterCategoryId, filterSubcategoryId, filterProductId, filterAccountId, filterStoreId, fetchExpenses]);
 
   return (
     <DashboardLayout
@@ -674,7 +671,7 @@ export default function ExpensesPage() {
                   ...accounts.map((acc) => ({ value: acc.id, label: acc.name })),
                 ]}
                 value={filterAccountId}
-                onChange={(e) => setFilterAccountId(e.target.value)}
+                onChange={(e) => { setFilterAccountId(e.target.value); setPage(1); }}
               />
               <Select
                 id="filter-date-preset"
@@ -696,6 +693,7 @@ export default function ExpensesPage() {
                 onChange={(e) => {
                   setFilterStartDate(e.target.value);
                   setFilterDatePreset('custom');
+                  setPage(1);
                 }}
               />
               <Input
@@ -706,6 +704,7 @@ export default function ExpensesPage() {
                 onChange={(e) => {
                   setFilterEndDate(e.target.value);
                   setFilterDatePreset('custom');
+                  setPage(1);
                 }}
               />
             </div>
@@ -731,7 +730,7 @@ export default function ExpensesPage() {
                 label="상품"
                 options={filterProductOptions}
                 value={filterProductId}
-                onChange={(e) => setFilterProductId(e.target.value)}
+                onChange={(e) => { setFilterProductId(e.target.value); setPage(1); }}
                 disabled={!filterSubcategoryId}
               />
             </div>
@@ -746,6 +745,7 @@ export default function ExpensesPage() {
                   setFilterStoreCategoryId(e.target.value);
                   setFilterStoreSubcategoryId('');
                   setFilterStoreId('');
+                  setPage(1);
                 }}
               />
               <Select
@@ -757,6 +757,7 @@ export default function ExpensesPage() {
                 onChange={(e) => {
                   setFilterStoreSubcategoryId(e.target.value);
                   setFilterStoreId('');
+                  setPage(1);
                 }}
               />
               <Select
@@ -765,7 +766,7 @@ export default function ExpensesPage() {
                 options={filterStoreOptions}
                 value={filterStoreId}
                 disabled={!filterStoreSubcategoryId}
-                onChange={(e) => setFilterStoreId(e.target.value)}
+                onChange={(e) => { setFilterStoreId(e.target.value); setPage(1); }}
               />
             </div>
           </CardContent>
@@ -787,6 +788,8 @@ export default function ExpensesPage() {
                         startDate: filterStartDate || undefined,
                         endDate: filterEndDate || undefined,
                         categoryId: filterCategoryId || undefined,
+                        subcategoryId: filterSubcategoryId || undefined,
+                        productId: filterProductId || undefined,
                         accountId: filterAccountId || undefined,
                         storeId: filterStoreId || undefined,
                       });

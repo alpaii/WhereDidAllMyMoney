@@ -40,6 +40,8 @@ THUMBNAIL_SIZE = (200, 200)
 async def get_expenses(
     account_id: Optional[UUID] = None,
     category_id: Optional[UUID] = None,
+    subcategory_id: Optional[UUID] = None,
+    product_id: Optional[UUID] = None,
     store_id: Optional[UUID] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
@@ -57,6 +59,10 @@ async def get_expenses(
     if category_id:
         subq = select(Subcategory.id).where(Subcategory.category_id == category_id)
         conditions.append(Expense.subcategory_id.in_(subq))
+    if subcategory_id:
+        conditions.append(Expense.subcategory_id == subcategory_id)
+    if product_id:
+        conditions.append(Expense.product_id == product_id)
     if store_id:
         conditions.append(Expense.store_id == store_id)
     if start_date:
@@ -137,6 +143,8 @@ async def get_expenses(
 async def export_expenses(
     account_id: Optional[UUID] = None,
     category_id: Optional[UUID] = None,
+    subcategory_id: Optional[UUID] = None,
+    product_id: Optional[UUID] = None,
     store_id: Optional[UUID] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
@@ -151,6 +159,10 @@ async def export_expenses(
     if category_id:
         subq = select(Subcategory.id).where(Subcategory.category_id == category_id)
         conditions.append(Expense.subcategory_id.in_(subq))
+    if subcategory_id:
+        conditions.append(Expense.subcategory_id == subcategory_id)
+    if product_id:
+        conditions.append(Expense.product_id == product_id)
     if store_id:
         conditions.append(Expense.store_id == store_id)
     if start_date:

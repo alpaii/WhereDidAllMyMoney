@@ -8,6 +8,8 @@ interface UseExpensesOptions {
   startDate?: string;
   endDate?: string;
   categoryId?: string;
+  subcategoryId?: string;
+  productId?: string;
   accountId?: string;
   storeId?: string;
 }
@@ -45,6 +47,8 @@ export function useExpenses(options: UseExpensesOptions = {}) {
       if (opts?.startDate) params.append('start_date', opts.startDate);
       if (opts?.endDate) params.append('end_date', opts.endDate);
       if (opts?.categoryId) params.append('category_id', opts.categoryId);
+      if (opts?.subcategoryId) params.append('subcategory_id', opts.subcategoryId);
+      if (opts?.productId) params.append('product_id', opts.productId);
       if (opts?.accountId) params.append('account_id', opts.accountId);
       if (opts?.storeId) params.append('store_id', opts.storeId);
 
@@ -133,6 +137,8 @@ export function useExpenses(options: UseExpensesOptions = {}) {
     if (opts?.startDate) params.append('start_date', opts.startDate);
     if (opts?.endDate) params.append('end_date', opts.endDate);
     if (opts?.categoryId) params.append('category_id', opts.categoryId);
+    if (opts?.subcategoryId) params.append('subcategory_id', opts.subcategoryId);
+    if (opts?.productId) params.append('product_id', opts.productId);
     if (opts?.accountId) params.append('account_id', opts.accountId);
     if (opts?.storeId) params.append('store_id', opts.storeId);
 
