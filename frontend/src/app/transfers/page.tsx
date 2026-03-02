@@ -323,8 +323,38 @@ export default function TransfersPage() {
         )}
 
         {/* Modal */}
-        <Modal isOpen={isModalOpen} onClose={handleClose} title={editingTransfer ? '이체 수정' : '이체 추가'}>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Modal
+          isOpen={isModalOpen}
+          onClose={handleClose}
+          title={editingTransfer ? '이체 수정' : '이체 추가'}
+          footer={
+            <div className="flex justify-between items-center">
+              {editingTransfer ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingTransfer.id);
+                    handleClose();
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button type="submit" form="transfer-form" isLoading={isSubmitting}>
+                  {editingTransfer ? '수정' : '이체'}
+                </Button>
+              </div>
+            </div>
+          }
+        >
+          <form id="transfer-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Select
               id="from_account_id"
               label="출금 계좌"
@@ -364,31 +394,6 @@ export default function TransfersPage() {
               error={errors.memo?.message}
               {...register('memo')}
             />
-
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
-              {editingTransfer ? (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => {
-                    handleDelete(editingTransfer.id);
-                    handleClose();
-                  }}
-                >
-                  삭제
-                </Button>
-              ) : (
-                <div />
-              )}
-              <div className="flex gap-3">
-                <Button type="button" variant="secondary" onClick={handleClose}>
-                  취소
-                </Button>
-                <Button type="submit" isLoading={isSubmitting}>
-                  {editingTransfer ? '수정' : '이체'}
-                </Button>
-              </div>
-            </div>
           </form>
         </Modal>
       </div>

@@ -575,10 +575,8 @@ export default function StoresPage() {
           isOpen={isCategoryModalOpen}
           onClose={() => { setIsCategoryModalOpen(false); setEditingCategory(null); }}
           title={editingCategory ? '카테고리 수정' : '카테고리 추가'}
-        >
-          <form onSubmit={categoryForm.handleSubmit(handleSaveCategory)} className="space-y-4">
-            <Input id="cat-name" label="카테고리 이름" autoFocus error={categoryForm.formState.errors.name?.message} {...categoryForm.register('name')} />
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
+          footer={
+            <div className="flex justify-between items-center">
               {editingCategory ? (
                 <Button type="button" variant="danger" onClick={() => { handleDeleteCategory(editingCategory.id); setIsCategoryModalOpen(false); setEditingCategory(null); }}>
                   삭제
@@ -586,9 +584,13 @@ export default function StoresPage() {
               ) : <div />}
               <div className="flex gap-3">
                 <Button type="button" variant="secondary" onClick={() => { setIsCategoryModalOpen(false); setEditingCategory(null); }}>취소</Button>
-                <Button type="submit" isLoading={isSubmitting}>{editingCategory ? '수정' : '추가'}</Button>
+                <Button type="submit" form="store-category-form" isLoading={isSubmitting}>{editingCategory ? '수정' : '추가'}</Button>
               </div>
             </div>
+          }
+        >
+          <form id="store-category-form" onSubmit={categoryForm.handleSubmit(handleSaveCategory)} className="space-y-4">
+            <Input id="cat-name" label="카테고리 이름" autoFocus error={categoryForm.formState.errors.name?.message} {...categoryForm.register('name')} />
           </form>
         </Modal>
 
@@ -597,10 +599,8 @@ export default function StoresPage() {
           isOpen={isSubcategoryModalOpen}
           onClose={() => { setIsSubcategoryModalOpen(false); setEditingSubcategory(null); }}
           title={editingSubcategory ? '서브카테고리 수정' : '서브카테고리 추가'}
-        >
-          <form onSubmit={subcategoryForm.handleSubmit(handleSaveSubcategory)} className="space-y-4">
-            <Input id="sub-name" label="서브카테고리 이름" autoFocus error={subcategoryForm.formState.errors.name?.message} {...subcategoryForm.register('name')} />
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
+          footer={
+            <div className="flex justify-between items-center">
               {editingSubcategory ? (
                 <Button type="button" variant="danger" onClick={() => { handleDeleteSubcategory(editingSubcategory.id); setIsSubcategoryModalOpen(false); setEditingSubcategory(null); }}>
                   삭제
@@ -608,9 +608,13 @@ export default function StoresPage() {
               ) : <div />}
               <div className="flex gap-3">
                 <Button type="button" variant="secondary" onClick={() => { setIsSubcategoryModalOpen(false); setEditingSubcategory(null); }}>취소</Button>
-                <Button type="submit" isLoading={isSubmitting}>{editingSubcategory ? '수정' : '추가'}</Button>
+                <Button type="submit" form="store-subcategory-form" isLoading={isSubmitting}>{editingSubcategory ? '수정' : '추가'}</Button>
               </div>
             </div>
+          }
+        >
+          <form id="store-subcategory-form" onSubmit={subcategoryForm.handleSubmit(handleSaveSubcategory)} className="space-y-4">
+            <Input id="sub-name" label="서브카테고리 이름" autoFocus error={subcategoryForm.formState.errors.name?.message} {...subcategoryForm.register('name')} />
           </form>
         </Modal>
 
@@ -620,8 +624,23 @@ export default function StoresPage() {
           onClose={handleCloseStoreModal}
           title={editingStore ? '매장 수정' : '매장 추가'}
           size="lg"
+          footer={
+            <div className="flex justify-between items-center">
+              {editingStore ? (
+                <Button type="button" variant="danger" onClick={() => { handleDeleteStore(editingStore.id); handleCloseStoreModal(); }}>
+                  삭제
+                </Button>
+              ) : <div />}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleCloseStoreModal}>취소</Button>
+                <Button type="submit" form="store-form" isLoading={isSubmitting} disabled={!manualMode && !selectedPlace}>
+                  {editingStore ? '수정' : '추가'}
+                </Button>
+              </div>
+            </div>
+          }
         >
-          <form onSubmit={storeForm.handleSubmit(handleSaveStore)} className="space-y-4">
+          <form id="store-form" onSubmit={storeForm.handleSubmit(handleSaveStore)} className="space-y-4">
             {manualMode ? (
               <>
                 <Input id="name" label="매장 이름" error={storeForm.formState.errors.name?.message} {...storeForm.register('name')} />
@@ -675,20 +694,6 @@ export default function StoresPage() {
                 )}
               </>
             )}
-
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
-              {editingStore ? (
-                <Button type="button" variant="danger" onClick={() => { handleDeleteStore(editingStore.id); handleCloseStoreModal(); }}>
-                  삭제
-                </Button>
-              ) : <div />}
-              <div className="flex gap-3">
-                <Button type="button" variant="secondary" onClick={handleCloseStoreModal}>취소</Button>
-                <Button type="submit" isLoading={isSubmitting} disabled={!manualMode && !selectedPlace}>
-                  {editingStore ? '수정' : '추가'}
-                </Button>
-              </div>
-            </div>
           </form>
         </Modal>
 
@@ -697,6 +702,16 @@ export default function StoresPage() {
           isOpen={isMoveModalOpen}
           onClose={() => { setIsMoveModalOpen(false); setMovingStore(null); }}
           title="카테고리 이동"
+          footer={
+            <div className="flex justify-end items-center">
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={() => { setIsMoveModalOpen(false); setMovingStore(null); }}>취소</Button>
+                <Button onClick={handleMoveStore} isLoading={isSubmitting} disabled={!moveCategoryId || !moveSubcategoryId}>
+                  이동
+                </Button>
+              </div>
+            </div>
+          }
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
@@ -723,14 +738,6 @@ export default function StoresPage() {
                 ...(moveTargetCategory?.subcategories?.map((sub) => ({ value: sub.id, label: sub.name })) || []),
               ]}
             />
-            <div className="flex justify-end -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
-              <div className="flex gap-3">
-                <Button variant="secondary" onClick={() => { setIsMoveModalOpen(false); setMovingStore(null); }}>취소</Button>
-                <Button onClick={handleMoveStore} isLoading={isSubmitting} disabled={!moveCategoryId || !moveSubcategoryId}>
-                  이동
-                </Button>
-              </div>
-            </div>
           </div>
         </Modal>
       </div>

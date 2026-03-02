@@ -444,8 +444,34 @@ export default function ProductsPage() {
           onClose={handleClose}
           title={editingProduct ? '상품 수정' : '상품 추가'}
           size="lg"
+          footer={
+            <div className="flex justify-between items-center">
+              {editingProduct ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingProduct.id);
+                    handleClose();
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button type="submit" form="product-form" isLoading={isSubmitting}>
+                  {editingProduct ? '수정' : '추가'}
+                </Button>
+              </div>
+            </div>
+          }
         >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form id="product-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 id="category_id"
@@ -496,31 +522,6 @@ export default function ProductsPage() {
               error={errors.memo?.message}
               {...register('memo')}
             />
-
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
-              {editingProduct ? (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => {
-                    handleDelete(editingProduct.id);
-                    handleClose();
-                  }}
-                >
-                  삭제
-                </Button>
-              ) : (
-                <div />
-              )}
-              <div className="flex gap-3">
-                <Button type="button" variant="secondary" onClick={handleClose}>
-                  취소
-                </Button>
-                <Button type="submit" isLoading={isSubmitting}>
-                  {editingProduct ? '수정' : '추가'}
-                </Button>
-              </div>
-            </div>
           </form>
         </Modal>
       </div>

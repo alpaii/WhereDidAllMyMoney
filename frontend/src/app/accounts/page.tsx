@@ -342,8 +342,34 @@ export default function AccountsPage() {
           isOpen={isModalOpen}
           onClose={handleClose}
           title={editingAccount ? '계좌 수정' : '계좌 추가'}
+          footer={
+            <div className="flex justify-between items-center">
+              {editingAccount ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    handleDelete(editingAccount.id);
+                    handleClose();
+                  }}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button type="submit" form="account-form" isLoading={isSubmitting}>
+                  {editingAccount ? '수정' : '추가'}
+                </Button>
+              </div>
+            </div>
+          }
         >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form id="account-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               id="name"
               label="계좌명"
@@ -397,31 +423,6 @@ export default function AccountsPage() {
                     )}
                   </button>
                 ))}
-              </div>
-            </div>
-
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
-              {editingAccount ? (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => {
-                    handleDelete(editingAccount.id);
-                    handleClose();
-                  }}
-                >
-                  삭제
-                </Button>
-              ) : (
-                <div />
-              )}
-              <div className="flex gap-3">
-                <Button type="button" variant="secondary" onClick={handleClose}>
-                  취소
-                </Button>
-                <Button type="submit" isLoading={isSubmitting}>
-                  {editingAccount ? '수정' : '추가'}
-                </Button>
               </div>
             </div>
           </form>

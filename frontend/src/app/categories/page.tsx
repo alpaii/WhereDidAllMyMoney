@@ -455,15 +455,8 @@ export default function CategoriesPage() {
             setEditingCategory(null);
           }}
           title={editingCategory ? '카테고리 수정' : '카테고리 추가'}
-        >
-          <form onSubmit={categoryForm.handleSubmit(handleSaveCategory)} className="space-y-4">
-            <Input
-              id="name"
-              label="카테고리 이름"
-              error={categoryForm.formState.errors.name?.message}
-              {...categoryForm.register('name')}
-            />
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
+          footer={
+            <div className="flex justify-between items-center">
               {editingCategory ? (
                 <Button
                   type="button"
@@ -490,11 +483,20 @@ export default function CategoriesPage() {
                 >
                   취소
                 </Button>
-                <Button type="submit" isLoading={isSubmitting}>
+                <Button type="submit" form="category-form" isLoading={isSubmitting}>
                   {editingCategory ? '수정' : '추가'}
                 </Button>
               </div>
             </div>
+          }
+        >
+          <form id="category-form" onSubmit={categoryForm.handleSubmit(handleSaveCategory)} className="space-y-4">
+            <Input
+              id="name"
+              label="카테고리 이름"
+              error={categoryForm.formState.errors.name?.message}
+              {...categoryForm.register('name')}
+            />
           </form>
         </Modal>
 
@@ -506,15 +508,8 @@ export default function CategoriesPage() {
             setEditingSubcategory(null);
           }}
           title={editingSubcategory ? '서브카테고리 수정' : '서브카테고리 추가'}
-        >
-          <form onSubmit={subcategoryForm.handleSubmit(handleSaveSubcategory)} className="space-y-4">
-            <Input
-              id="subcategory-name"
-              label="서브카테고리 이름"
-              error={subcategoryForm.formState.errors.name?.message}
-              {...subcategoryForm.register('name')}
-            />
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
+          footer={
+            <div className="flex justify-between items-center">
               {editingSubcategory ? (
                 <Button
                   type="button"
@@ -541,11 +536,20 @@ export default function CategoriesPage() {
                 >
                   취소
                 </Button>
-                <Button type="submit" isLoading={isSubmitting}>
+                <Button type="submit" form="subcategory-form" isLoading={isSubmitting}>
                   {editingSubcategory ? '수정' : '추가'}
                 </Button>
               </div>
             </div>
+          }
+        >
+          <form id="subcategory-form" onSubmit={subcategoryForm.handleSubmit(handleSaveSubcategory)} className="space-y-4">
+            <Input
+              id="subcategory-name"
+              label="서브카테고리 이름"
+              error={subcategoryForm.formState.errors.name?.message}
+              {...subcategoryForm.register('name')}
+            />
           </form>
         </Modal>
       </div>

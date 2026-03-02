@@ -274,8 +274,31 @@ export default function MaintenanceFeesPage() {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           title={editingFee ? '관리비 장소 수정' : '관리비 장소 추가'}
+          footer={
+            <div className="flex justify-between items-center">
+              {editingFee ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => handleDelete(editingFee.id)}
+                >
+                  삭제
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={handleCloseModal}>
+                  취소
+                </Button>
+                <Button type="submit" form="fee-form" isLoading={isSubmitting}>
+                  {editingFee ? '수정' : '추가'}
+                </Button>
+              </div>
+            </div>
+          }
         >
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+          <form id="fee-form" onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
             <Input
               id="name"
               label="이름"
@@ -301,28 +324,6 @@ export default function MaintenanceFeesPage() {
                 placeholder="추가 정보를 입력하세요"
                 {...form.register('memo')}
               />
-            </div>
-
-            <div className="flex justify-between -mx-6 px-6 mt-6 pt-4 border-t border-gray-200">
-              {editingFee ? (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => handleDelete(editingFee.id)}
-                >
-                  삭제
-                </Button>
-              ) : (
-                <div />
-              )}
-              <div className="flex gap-3">
-                <Button type="button" variant="secondary" onClick={handleCloseModal}>
-                  취소
-                </Button>
-                <Button type="submit" isLoading={isSubmitting}>
-                  {editingFee ? '수정' : '추가'}
-                </Button>
-              </div>
             </div>
           </form>
         </Modal>
