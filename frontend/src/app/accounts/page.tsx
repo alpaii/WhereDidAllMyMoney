@@ -388,6 +388,7 @@ export default function AccountsPage() {
             <Input
               id="balance"
               type="text"
+              inputMode="numeric"
               label="잔액"
               error={errors.balance?.message}
               {...register('balance', { onChange: handleBalanceChange })}

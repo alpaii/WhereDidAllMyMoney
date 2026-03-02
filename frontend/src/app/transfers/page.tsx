@@ -374,6 +374,7 @@ export default function TransfersPage() {
             <Input
               id="amount"
               type="text"
+              inputMode="numeric"
               label="금액"
               placeholder="0"
               error={errors.amount?.message}

@@ -502,6 +502,7 @@ export default function ProductsPage() {
               <Input
                 id="default_price"
                 type="text"
+                inputMode="numeric"
                 label="기본 가격 (선택)"
                 error={errors.default_price?.message}
                 {...register('default_price', { onChange: handlePriceChange })}
