@@ -887,37 +887,6 @@ export default function ExpensesPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      {/* Thumbnail */}
-                      {expense.photos && expense.photos.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => openLightbox(expense.photos!, 0)}
-                          className="relative flex-shrink-0"
-                        >
-                          {isVideo(expense.photos[0]) ? (
-                            <div className="relative w-12 h-12">
-                              <video
-                                src={getPhotoUrl(expense.photos[0].file_path)}
-                                className="w-12 h-12 object-cover rounded-lg border border-gray-400"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <Play size={16} className="text-white drop-shadow-lg" />
-                              </div>
-                            </div>
-                          ) : (
-                            <img
-                              src={getPhotoUrl(expense.photos[0].thumbnail_path || expense.photos[0].file_path)}
-                              alt="지출 사진"
-                              className="w-12 h-12 object-cover rounded-lg border border-gray-400 hover:opacity-80 transition-opacity"
-                            />
-                          )}
-                          {expense.photos.length > 1 && (
-                            <span className="absolute -bottom-1 -right-1 bg-gray-800 text-white text-xs px-1 rounded">
-                              +{expense.photos.length - 1}
-                            </span>
-                          )}
-                        </button>
-                      )}
                       <div>
                         <p className="font-medium text-gray-800">
                           {expense.category_name || '미분류'}
@@ -985,6 +954,35 @@ export default function ExpensesPage() {
                     }
                     return null;
                   })()}
+                  {expense.photos && expense.photos.length > 0 && (
+                    <div className="flex gap-1 mt-2">
+                      {expense.photos.map((photo, idx) => (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => openLightbox(expense.photos!, idx)}
+                        >
+                          {isVideo(photo) ? (
+                            <div className="relative w-8 h-8">
+                              <video
+                                src={getPhotoUrl(photo.file_path)}
+                                className="w-8 h-8 object-cover rounded border border-gray-400"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <Play size={12} className="text-white drop-shadow-lg" />
+                              </div>
+                            </div>
+                          ) : (
+                            <img
+                              src={getPhotoUrl(photo.thumbnail_path || photo.file_path)}
+                              alt="지출 사진"
+                              className="w-8 h-8 object-cover rounded border border-gray-400 hover:opacity-80 transition-opacity"
+                            />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))
