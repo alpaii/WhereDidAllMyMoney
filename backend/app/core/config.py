@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # Uploads
     UPLOAD_DIR: str = "uploads"
-    MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
+    MAX_UPLOAD_SIZE: int = 100 * 1024 * 1024  # 100MB
 
     # Naver API
     NAVER_CLIENT_ID: str = ""

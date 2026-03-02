@@ -32,7 +32,9 @@ from app.services.account_service import update_balance, get_account_with_lock
 
 router = APIRouter()
 
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm"}
+ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
 THUMBNAIL_SIZE = (200, 200)
 
 
@@ -516,25 +518,31 @@ async def upload_expense_photo(
             detail=f"File too large. Max size: {settings.MAX_UPLOAD_SIZE // (1024*1024)}MB"
         )
 
+    # Determine media type
+    media_type = "video" if ext in VIDEO_EXTENSIONS else "image"
+
     # Generate unique filename
     unique_id = str(uuid_lib.uuid4())
     filename = f"{unique_id}{ext}"
     photo_path = Path(settings.UPLOAD_DIR) / "photos" / filename
-    thumbnail_path = Path(settings.UPLOAD_DIR) / "thumbnails" / filename
 
     # Save original file
     photo_path.parent.mkdir(parents=True, exist_ok=True)
     with open(photo_path, "wb") as f:
         f.write(content)
 
-    # Create thumbnail
-    thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with Image.open(photo_path) as img:
-            img.thumbnail(THUMBNAIL_SIZE)
-            img.save(thumbnail_path)
-    except Exception:
-        thumbnail_path = None
+    # Create thumbnail (images only)
+    thumbnail_str = None
+    if media_type == "image":
+        thumbnail_path = Path(settings.UPLOAD_DIR) / "thumbnails" / filename
+        thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with Image.open(photo_path) as img:
+                img.thumbnail(THUMBNAIL_SIZE)
+                img.save(thumbnail_path)
+            thumbnail_str = str(thumbnail_path)
+        except Exception:
+            pass
 
     # Get next sort order
     max_sort = max([p.sort_order for p in expense.photos], default=-1)
@@ -543,7 +551,8 @@ async def upload_expense_photo(
     photo = ExpensePhoto(
         expense_id=expense_id,
         file_path=str(photo_path),
-        thumbnail_path=str(thumbnail_path) if thumbnail_path else None,
+        thumbnail_path=thumbnail_str,
+        media_type=media_type,
         sort_order=max_sort + 1
     )
     db.add(photo)

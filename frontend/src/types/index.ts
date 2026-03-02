@@ -128,6 +128,7 @@ export interface ExpensePhoto {
   expense_id: string;
   file_path: string;
   thumbnail_path?: string;
+  media_type?: string;
   sort_order: number;
   created_at: string;
 }

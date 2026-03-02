@@ -11,6 +11,7 @@ class ExpensePhotoResponse(BaseModel):
     expense_id: UUID
     file_path: str
     thumbnail_path: Optional[str] = None
+    media_type: str = "image"
     sort_order: int
     created_at: datetime
 

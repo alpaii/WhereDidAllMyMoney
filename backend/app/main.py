@@ -47,6 +47,21 @@ async def lifespan(app: FastAPI):
             """)
         )
 
+        # Add media_type column to expense_photos (if not exists)
+        await conn.execute(
+            text("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'expense_photos' AND column_name = 'media_type'
+                    ) THEN
+                        ALTER TABLE expense_photos ADD COLUMN media_type VARCHAR(10) DEFAULT 'image';
+                    END IF;
+                END $$;
+            """)
+        )
+
         # Drop category_id column from expenses (now derived via subcategory)
         await conn.execute(
             text("""

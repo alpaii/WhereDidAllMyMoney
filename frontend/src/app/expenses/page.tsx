@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Camera, X, LayoutGrid, Download } from 'lucide-react';
+import { Plus, Pencil, ExternalLink, Copy, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Camera, X, LayoutGrid, Download, Play } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import {
   Card,
@@ -424,6 +424,9 @@ export default function ExpensesPage() {
     const { protocol, hostname } = window.location;
     return `${protocol}//${hostname}:8000/${filePath}`;
   };
+
+  // Check if media is video
+  const isVideo = (photo: ExpensePhoto) => photo.media_type === 'video';
 
   // 계층형 지출 추가 모달 핸들러
   const openQuickAddModal = () => {
@@ -891,11 +894,23 @@ export default function ExpensesPage() {
                           onClick={() => openLightbox(expense.photos!, 0)}
                           className="relative flex-shrink-0"
                         >
-                          <img
-                            src={getPhotoUrl(expense.photos[0].thumbnail_path || expense.photos[0].file_path)}
-                            alt="지출 사진"
-                            className="w-12 h-12 object-cover rounded-lg border border-gray-400 hover:opacity-80 transition-opacity"
-                          />
+                          {isVideo(expense.photos[0]) ? (
+                            <div className="relative w-12 h-12">
+                              <video
+                                src={getPhotoUrl(expense.photos[0].file_path)}
+                                className="w-12 h-12 object-cover rounded-lg border border-gray-400"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <Play size={16} className="text-white drop-shadow-lg" />
+                              </div>
+                            </div>
+                          ) : (
+                            <img
+                              src={getPhotoUrl(expense.photos[0].thumbnail_path || expense.photos[0].file_path)}
+                              alt="지출 사진"
+                              className="w-12 h-12 object-cover rounded-lg border border-gray-400 hover:opacity-80 transition-opacity"
+                            />
+                          )}
                           {expense.photos.length > 1 && (
                             <span className="absolute -bottom-1 -right-1 bg-gray-800 text-white text-xs px-1 rounded">
                               +{expense.photos.length - 1}
@@ -1036,11 +1051,23 @@ export default function ExpensesPage() {
                                   type="button"
                                   onClick={() => openLightbox(expense.photos!, idx)}
                                 >
-                                  <img
-                                    src={getPhotoUrl(photo.thumbnail_path || photo.file_path)}
-                                    alt="지출 사진"
-                                    className="w-8 h-8 object-cover rounded border border-gray-400 hover:opacity-80 transition-opacity"
-                                  />
+                                  {isVideo(photo) ? (
+                                    <div className="relative w-8 h-8">
+                                      <video
+                                        src={getPhotoUrl(photo.file_path)}
+                                        className="w-8 h-8 object-cover rounded border border-gray-400"
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <Play size={12} className="text-white drop-shadow-lg" />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <img
+                                      src={getPhotoUrl(photo.thumbnail_path || photo.file_path)}
+                                      alt="지출 사진"
+                                      className="w-8 h-8 object-cover rounded border border-gray-400 hover:opacity-80 transition-opacity"
+                                    />
+                                  )}
                                 </button>
                               ))}
                             </div>
@@ -1255,21 +1282,33 @@ export default function ExpensesPage() {
               {...register('purchase_url')}
             />
 
-            {/* Photo upload section - only for editing */}
+            {/* Photo/Video upload section - only for editing */}
             {editingExpense && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  사진
+                  사진/동영상
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {/* Existing photos */}
+                  {/* Existing photos/videos */}
                   {editingExpense.photos?.map((photo) => (
                     <div key={photo.id} className="relative group">
-                      <img
-                        src={getPhotoUrl(photo.thumbnail_path || photo.file_path)}
-                        alt="지출 사진"
-                        className="w-20 h-20 object-cover rounded-lg border border-gray-400"
-                      />
+                      {isVideo(photo) ? (
+                        <div className="relative w-20 h-20">
+                          <video
+                            src={getPhotoUrl(photo.file_path)}
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-400"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <Play size={24} className="text-white drop-shadow-lg" />
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          src={getPhotoUrl(photo.thumbnail_path || photo.file_path)}
+                          alt="지출 사진"
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-400"
+                        />
+                      )}
                       <button
                         type="button"
                         onClick={() => handlePhotoDelete(photo.id)}
@@ -1298,7 +1337,7 @@ export default function ExpensesPage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     onChange={handlePhotoUpload}
                     className="hidden"
                   />
@@ -1445,13 +1484,25 @@ export default function ExpensesPage() {
             </button>
           )}
 
-          {/* Image */}
-          <img
-            src={getPhotoUrl(lightboxPhotos[lightboxIndex].file_path)}
-            alt="지출 사진"
-            className="max-w-[90vw] max-h-[90vh] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {/* Image or Video */}
+          {isVideo(lightboxPhotos[lightboxIndex]) ? (
+            <video
+              key={lightboxPhotos[lightboxIndex].id}
+              src={getPhotoUrl(lightboxPhotos[lightboxIndex].file_path)}
+              controls
+              autoPlay
+              playsInline
+              className="max-w-[90vw] max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img
+              src={getPhotoUrl(lightboxPhotos[lightboxIndex].file_path)}
+              alt="지출 사진"
+              className="max-w-[90vw] max-h-[90vh] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
 
           {/* Next button */}
           {lightboxPhotos.length > 1 && (

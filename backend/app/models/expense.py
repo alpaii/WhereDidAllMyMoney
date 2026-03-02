@@ -41,6 +41,7 @@ class ExpensePhoto(Base):
     expense_id = Column(UUID(as_uuid=True), ForeignKey("expenses.id", ondelete="CASCADE"), nullable=False, index=True)
     file_path = Column(String(512), nullable=False)  # 로컬 파일 경로
     thumbnail_path = Column(String(512), nullable=True)  # 썸네일 파일 경로
+    media_type = Column(String(10), default="image")  # "image" or "video"
     sort_order = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
