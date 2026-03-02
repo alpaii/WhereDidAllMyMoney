@@ -888,6 +888,9 @@ export default function ExpensesPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div>
+                        <p className="text-sm text-[rgb(161,25,25)] font-mono">
+                          {formatDateTime(expense.expense_at)}
+                        </p>
                         <p className="font-medium text-gray-800">
                           {expense.category_name || '미분류'}
                           {expense.subcategory_name && (
@@ -904,9 +907,6 @@ export default function ExpensesPage() {
                         {expense.store_name && (
                           <p className="text-gray-500">{expense.store_name}</p>
                         )}
-                        <p className="text-sm text-[rgb(161,25,25)] font-mono">
-                          {formatDateTime(expense.expense_at)}
-                        </p>
                         <div className="mt-1">{renderAccountBadge(expense.account_id, expense.account_name)}</div>
                       </div>
                     </div>
