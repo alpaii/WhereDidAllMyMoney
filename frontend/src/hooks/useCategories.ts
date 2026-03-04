@@ -31,9 +31,7 @@ export function useCategories() {
 
   const updateCategory = async (id: string, data: { name: string }) => {
     const response = await api.patch<Category>(`/categories/${id}`, data);
-    setCategories((prev) =>
-      prev.map((cat) => (cat.id === id ? { ...cat, name: response.data.name } : cat))
-    );
+    await fetchCategories();
     return response.data;
   };
 
@@ -50,14 +48,7 @@ export function useCategories() {
 
   const updateSubcategory = async (id: string, data: { name: string }) => {
     const response = await api.patch<Subcategory>(`/categories/subcategories/${id}`, data);
-    setCategories((prev) =>
-      prev.map((cat) => ({
-        ...cat,
-        subcategories: cat.subcategories?.map((sub) =>
-          sub.id === id ? { ...sub, name: response.data.name } : sub
-        ),
-      }))
-    );
+    await fetchCategories();
     return response.data;
   };
 
@@ -185,15 +176,13 @@ export function useProducts() {
 
   const createProduct = async (data: ProductCreate) => {
     const response = await api.post<Product>('/categories/products/', data);
-    setProducts((prev) => [...prev, response.data]);
+    await fetchProducts();
     return response.data;
   };
 
   const updateProduct = async (id: string, data: Partial<ProductCreate>) => {
     const response = await api.patch<Product>(`/categories/products/${id}`, data);
-    setProducts((prev) =>
-      prev.map((product) => (product.id === id ? response.data : product))
-    );
+    await fetchProducts();
     return response.data;
   };
 

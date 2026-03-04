@@ -33,9 +33,7 @@ export function useStoreCategories() {
 
   const updateStoreCategory = async (id: string, name: string) => {
     const response = await api.patch<StoreCategory>(`/store-categories/${id}`, { name });
-    setStoreCategories((prev) =>
-      prev.map((cat) => (cat.id === id ? { ...cat, name: response.data.name } : cat))
-    );
+    await fetchStoreCategories();
     return response.data;
   };
 
@@ -55,14 +53,7 @@ export function useStoreCategories() {
 
   const updateStoreSubcategory = async (id: string, name: string) => {
     const response = await api.patch<StoreSubcategory>(`/store-categories/subcategories/${id}`, { name });
-    setStoreCategories((prev) =>
-      prev.map((cat) => ({
-        ...cat,
-        subcategories: cat.subcategories?.map((sub) =>
-          sub.id === id ? { ...sub, name: response.data.name } : sub
-        ),
-      }))
-    );
+    await fetchStoreCategories();
     return response.data;
   };
 

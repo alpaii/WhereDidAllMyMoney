@@ -25,15 +25,13 @@ export function useAccounts() {
 
   const createAccount = async (data: AccountCreate) => {
     const response = await api.post<Account>('/accounts/', data);
-    setAccounts((prev) => [...prev, response.data]);
+    await fetchAccounts();
     return response.data;
   };
 
   const updateAccount = async (id: string, data: Partial<AccountCreate>) => {
     const response = await api.patch<Account>(`/accounts/${id}`, data);
-    setAccounts((prev) =>
-      prev.map((account) => (account.id === id ? response.data : account))
-    );
+    await fetchAccounts();
     return response.data;
   };
 
